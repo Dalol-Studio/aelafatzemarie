@@ -84,6 +84,11 @@ const nextConfig: NextConfig = {
       ...config.resolve.alias,
       [LOCALE_ALIAS]: path.resolve(__dirname, `src/${LOCALE_DYNAMIC}`),
     };
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      zlib: false,
+    };
     return config;
   },
 };

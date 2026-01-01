@@ -1,10 +1,11 @@
 import {
   copyFile,
   deleteFile,
-  getFileNamePartsFromStorageUrl,
   moveFile,
   putFile,
-} from '@/platforms/storage';
+  getStorageUrlsForPrefix,
+} from '@/platforms/storage/server';
+import { getFileNamePartsFromStorageUrl } from '@/platforms/storage';
 import { removeGpsData, resizeImageToBytes } from '../server';
 import {
   generateRandomFileNameForPhoto,
@@ -58,4 +59,31 @@ export const convertUploadToPhoto = async ({
     .then(async url => storeOptimizedPhotos(url, fileBytes));
 
   return updatedUrl;
+};
+
+const PREFIX_PHOTO = 'photo';
+const PREFIX_UPLOAD = 'upload';
+
+export const getStorageUploadUrls = () =>
+  getStorageUrlsForPrefix(`${PREFIX_UPLOAD}-`);
+
+export const getStoragePhotoUrls = () =>
+  getStorageUrlsForPrefix(`${PREFIX_PHOTO}-`);
+
+import { Photo } from '..';
+
+export const getStorageUrlsForPhoto = async ({ url }: Photo) => {
+  const getSortScoreForUrl = (url: string) => {
+    const { fileNameBase } = getFileNamePartsFromStorageUrl(url);
+    if (fileNameBase.endsWith('-sm')) { return 1; }
+    if (fileNameBase.endsWith('-md')) { return 2; }
+    if (fileNameBase.endsWith('-lg')) { return 3; }
+    return 0;
+  };
+
+  const { fileNameBase } = getFileNamePartsFromStorageUrl(url);
+
+  return getStorageUrlsForPrefix(fileNameBase).then(urls =>
+    urls.sort((a, b) => getSortScoreForUrl(a.url) - getSortScoreForUrl(b.url)),
+  );
 };

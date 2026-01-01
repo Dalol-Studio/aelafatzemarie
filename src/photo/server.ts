@@ -1,7 +1,7 @@
-import {
-  deleteFilesWithPrefix,
-  getFileNamePartsFromStorageUrl,
-} from '@/platforms/storage';
+import fs from 'fs/promises';
+import path from 'path';
+import { deleteFilesWithPrefix } from '@/platforms/storage/server';
+import { getFileNamePartsFromStorageUrl } from '@/platforms/storage';
 import { convertFormDataToPhotoDbInsert } from '@/photo/form';
 import {
   FujifilmSimulation,
@@ -76,11 +76,19 @@ export const extractImageDataFromBlobPath = async (
   let error: string | undefined;
 
   const fileBytes = blobPath
-    ? await fetch(url, { cache: 'no-store' }).then(res => res.arrayBuffer())
-      .catch(e => {
-        error = `Error fetching image from ${url}: "${e.message}"`;
-        return undefined;
-      })
+    ? url.startsWith('/')
+      ? await fs.readFile(path.join(process.cwd(), 'public', url))
+        .then(data =>
+          data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength))
+        .catch(e => {
+          error = `Error reading file from ${url}: "${e.message}"`;
+          return undefined;
+        }) as ArrayBuffer
+      : await fetch(url, { cache: 'no-store' }).then(res => res.arrayBuffer())
+        .catch(e => {
+          error = `Error fetching image from ${url}: "${e.message}"`;
+          return undefined;
+        })
     : undefined;
 
   try {

@@ -4,7 +4,7 @@ import { runAuthenticatedAdminServerAction } from '@/auth/server';
 import { testRedisConnection } from '@/platforms/redis';
 import { testOpenAiConnection } from '@/platforms/openai';
 import { testDatabaseConnection } from '@/platforms/postgres';
-import { testStorageConnection } from '@/platforms/storage';
+import { testStorageConnection } from '@/platforms/storage/server';
 import { testGooglePlacesConnection } from '@/platforms/google-places';
 import { APP_CONFIGURATION } from '@/app/config';
 import { getStorageUploadUrlsNoStore } from '@/platforms/storage/cache';
@@ -126,3 +126,8 @@ export const testConnectionsAction = async () =>
       locationError,
     };
   });
+
+export const backupDatabaseAction = async () =>
+  runAuthenticatedAdminServerAction(() =>
+    import('@/db/backup').then(mod => mod.backupDatabaseToLocalFs())
+  );

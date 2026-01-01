@@ -2,7 +2,6 @@ import { TEMPLATE_REPO_NAME, TEMPLATE_REPO_URL } from '@/app/config';
 import { useAppText } from '@/i18n/state/client';
 import { clsx } from 'clsx/lite';
 import Link from 'next/link';
-import { BiLogoGithub } from 'react-icons/bi';
 
 export default function RepoLink() {
   const { footer } = useAppText();
@@ -21,10 +20,6 @@ export default function RepoLink() {
           'hover:text-medium active:text-dim',
         )}
       >
-        <BiLogoGithub
-          size={16}
-          className="translate-y-[0.5px] hidden xs:inline-block"
-        />
         {TEMPLATE_REPO_NAME}
       </Link>
     </span>

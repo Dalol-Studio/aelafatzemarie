@@ -8,6 +8,7 @@ import {
   getPhoto,
   getPhotos,
   addTagsToPhotos,
+  updateTakenAtForPhotos,
   getUniqueTags,
   deletePhotoRecipeGlobally,
   renamePhotoRecipeGlobally,
@@ -22,7 +23,7 @@ import {
   convertPhotoToFormData,
 } from './form';
 import { redirect } from 'next/navigation';
-import { deleteFile } from '@/platforms/storage';
+import { deleteFile } from '@/platforms/storage/server';
 import {
   revalidateAdminPaths,
   revalidateAllKeysAndPaths,
@@ -114,6 +115,8 @@ const addUpload = async ({
   excludeFromFeeds,
   takenAtLocal,
   takenAtNaiveLocal,
+  locationName,
+  priorityOrder,
   uniqueTags: _uniqueTags,
   onStreamUpdate,
   onFinish,
@@ -128,6 +131,8 @@ const addUpload = async ({
   excludeFromFeeds?: string
   takenAtLocal: string
   takenAtNaiveLocal: string
+  locationName?: string
+  priorityOrder?: string
   uniqueTags?: Tags
   onStreamUpdate?: (
     statusMessage: string,
@@ -186,6 +191,8 @@ const addUpload = async ({
       semanticDescription: semantic,
       takenAt: formDataFromExif.takenAt || takenAtLocal,
       takenAtNaive: formDataFromExif.takenAtNaive || takenAtNaiveLocal,
+      locationName,
+      priorityOrder,
     };
 
     onStreamUpdate?.('Transferring to photo storage');
@@ -229,6 +236,8 @@ export const addUploadsAction = async ({
   excludeFromFeeds,
   takenAtLocal,
   takenAtNaiveLocal,
+  locationName,
+  priorityOrder,
 }: Omit<
   Parameters<typeof addUpload>[0],
   'url' | 'onStreamUpdate' | 'onFinish' | 'albumIds'
@@ -282,6 +291,8 @@ export const addUploadsAction = async ({
             excludeFromFeeds,
             takenAtLocal,
             takenAtNaiveLocal,
+            locationName,
+            priorityOrder,
             uniqueTags,
             onStreamUpdate: streamUpdate,
             onFinish: () => {
@@ -345,6 +356,16 @@ export const tagMultiplePhotosAction = async (
       convertStringToArray(tags, false) ?? [],
       photoIds,
     );
+    revalidateAllKeysAndPaths();
+  });
+
+export const updateTakenAtMultiplePhotosAction = async (
+  takenAt: string,
+  takenAtNaive: string,
+  photoIds: string[],
+) =>
+  runAuthenticatedAdminServerAction(async () => {
+    await updateTakenAtForPhotos(takenAt, takenAtNaive, photoIds);
     revalidateAllKeysAndPaths();
   });
 

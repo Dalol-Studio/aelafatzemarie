@@ -8,11 +8,11 @@ import { IoCloseSharp } from 'react-icons/io5';
 import { useEffect, useRef, useState } from 'react';
 import { TAG_FAVS, Tags } from '@/tag';
 import FieldsetTag from '@/tag/FieldsetTag';
-import { tagMultiplePhotosAction } from '@/photo/actions';
+import { tagMultiplePhotosAction, updateTakenAtMultiplePhotosAction } from '@/photo/actions';
 import { toastSuccess } from '@/toast';
 import DeletePhotosButton from '@/admin/DeletePhotosButton';
 import { photoQuantityText } from '@/photo';
-import { FaArrowDown, FaCheck } from 'react-icons/fa6';
+import { FaArrowDown, FaCheck, FaCalendar } from 'react-icons/fa6';
 import ResponsiveText from '@/components/primitives/ResponsiveText';
 import IconFavs from '@/components/icons/IconFavs';
 import IconTag from '@/components/icons/IconTag';
@@ -22,6 +22,7 @@ import { Albums } from '@/album';
 import FieldsetAlbum from '@/album/FieldsetAlbum';
 import IconAlbum from '@/components/icons/IconAlbum';
 import { addPhotosToAlbumsAction } from '@/album/actions';
+import FieldsetDate from '@/components/FieldsetDate';
 
 export default function AdminBatchEditPanelClient({
   uniqueAlbums,
@@ -50,6 +51,9 @@ export default function AdminBatchEditPanelClient({
   const [tagErrorMessage, setTagErrorMessage] = useState('');
   const isInTagMode = tags !== undefined;
 
+  const [takenAt, setTakenAt] = useState<string>();
+  const isInDateMode = takenAt !== undefined;
+
   const photosText = photoQuantityText(
     selectedPhotoIds?.length ?? 0,
     appText,
@@ -72,7 +76,7 @@ export default function AdminBatchEditPanelClient({
       {photosText} selected
     </ResponsiveText>;
 
-  const renderActions = isInTagMode || isInAlbumMode
+  const renderActions = isInTagMode || isInAlbumMode || isInDateMode
     ? <>
       <LoaderButton
         className="min-h-[2.5rem]"
@@ -84,6 +88,7 @@ export default function AdminBatchEditPanelClient({
           setAlbumsTitles(undefined);
           setTags(undefined);
           setTagErrorMessage('');
+          setTakenAt(undefined);
         }}
         disabled={isPerformingSelectEdit}
       />
@@ -93,8 +98,11 @@ export default function AdminBatchEditPanelClient({
         confirmText={isInTagMode
           // eslint-disable-next-line max-len
           ? `Are you sure you want to apply tags to ${photosText}? This action cannot be undone.`
-          // eslint-disable-next-line max-len
-          : `Are you sure you want to add ${photosText} to these albums? This action cannot be undone.`}
+          : isInAlbumMode
+            // eslint-disable-next-line max-len
+            ? `Are you sure you want to add ${photosText} to these albums? This action cannot be undone.`
+            // eslint-disable-next-line max-len
+            : `Are you sure you want to update the date for ${photosText}? This action cannot be undone.`}
         onClick={() => {
           setIsPerformingSelectEdit?.(true);
           if (isInTagMode) {
@@ -117,12 +125,35 @@ export default function AdminBatchEditPanelClient({
                 stopSelectingPhotos?.();
               })
               .finally(() => setIsPerformingSelectEdit?.(false));
+          } else if (isInDateMode) {
+            // Convert the input to proper formats
+            // If user enters naive format (YYYY-MM-DD HH:MM:SS), convert to ISO
+            // If user enters ISO format, use as-is
+            const isIsoFormat = takenAt.includes('T') && takenAt.includes('Z');
+            const takenAtIso = isIsoFormat 
+              ? takenAt 
+              : new Date(takenAt).toISOString();
+            const takenAtNaiveFormat = isIsoFormat
+              ? takenAt.replace(/T/, ' ').replace(/\.\d+Z$/, '')
+              : takenAt;
+            
+            updateTakenAtMultiplePhotosAction(
+              takenAtIso,
+              takenAtNaiveFormat,
+              selectedPhotoIds ?? [],
+            )
+              .then(() => {
+                toastSuccess(`${photosText} updated`);
+                stopSelectingPhotos?.();
+              })
+              .finally(() => setIsPerformingSelectEdit?.(false));
           }
         }}
         disabled={
           (
             (!tags || Boolean(tagErrorMessage)) &&
-            !albumTitles
+            !albumTitles &&
+            !takenAt
           ) ||
           (selectedPhotoIds?.length ?? 0) === 0 ||
           isPerformingSelectEdit
@@ -172,6 +203,13 @@ export default function AdminBatchEditPanelClient({
         Tag
       </LoaderButton>
       <LoaderButton
+        onClick={() => setTakenAt('')}
+        disabled={isFormDisabled}
+        icon={<FaCalendar size={14} className="translate-y-[0.5px]" />}
+      >
+        Date
+      </LoaderButton>
+      <LoaderButton
         icon={<IoCloseSharp size={19} />}
         onClick={stopSelectingPhotos}
       />
@@ -219,8 +257,16 @@ export default function AdminBatchEditPanelClient({
               openOnLoad
               hideLabel
             />
-            : isInTagMode
-              ? <FieldsetTag
+            : isInDateMode
+              ? <FieldsetDate
+                label="Taken At"
+                value={takenAt}
+                onChange={setTakenAt}
+                readOnly={isPerformingSelectEdit}
+                hideLabel
+              />
+              : isInTagMode
+                ? <FieldsetTag
                 tags={tags}
                 tagOptions={uniqueTags}
                 placeholder={`Tag ${photosText} ...`}

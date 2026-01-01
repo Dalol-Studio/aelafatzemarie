@@ -55,7 +55,7 @@ export const TEXT = {
     nextShort: 'Next',
   },
   footer: {
-    madeWith: 'Made with',
+    madeWith: '©2026',
   },
   sort: {
     sort: 'Sort',

@@ -25,6 +25,8 @@ import IconFolder from '@/components/icons/IconFolder';
 import IconSignOut from '@/components/icons/IconSignOut';
 import { IoMdCheckboxOutline } from 'react-icons/io';
 import IconBroom from '@/components/icons/IconBroom';
+import IconGrSync from '@/components/icons/IconGrSync';
+import { backupDatabaseAction } from './actions';
 import InsightsIndicatorDot from './insights/InsightsIndicatorDot';
 import MoreMenuItem from '@/components/more/MoreMenuItem';
 import Spinner from '@/components/Spinner';
@@ -177,6 +179,20 @@ export default function AdminAppMenu({
           : startSelectingPhotos,
       });
     }
+
+    items.push({
+      label: 'Backup Database',
+      icon: <IconGrSync className="translate-y-[0.5px]" />,
+      action: () => {
+        // eslint-disable-next-line no-alert
+        if (confirm('Backup database to local storage?')) {
+          backupDatabaseAction()
+            .then(() => alert('Backup completed'))
+            .catch((e) => alert(`Backup failed: ${e}`));
+        }
+      },
+    });
+
     items.push({
       label: showAppInsightsLink
         ? appText.admin.appInsights

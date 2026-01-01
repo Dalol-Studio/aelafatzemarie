@@ -56,7 +56,7 @@ export const TEXT: I18N = {
     nextShort: 'Next',
   },
   footer: {
-    madeWith: 'Made with',
+    madeWith: '©2026 AelaFatzemarie',
   },
   sort: {
     sort: 'Sort',

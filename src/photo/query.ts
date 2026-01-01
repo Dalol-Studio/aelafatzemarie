@@ -217,6 +217,24 @@ export const addTagsToPhotos = (tags: string[], photoIds: string[]) =>
     convertArrayToPostgresString(photoIds),
   ]), 'addTagsToPhotos');
 
+export const updateTakenAtForPhotos = (
+  takenAt: string,
+  takenAtNaive: string,
+  photoIds: string[],
+) =>
+  safelyQuery(() => query(`
+    UPDATE photos
+    SET 
+      taken_at = $1,
+      taken_at_naive = $2,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ANY($3)
+  `, [
+    takenAt,
+    takenAtNaive,
+    convertArrayToPostgresString(photoIds),
+  ]), 'updateTakenAtForPhotos');
+
 export const deletePhotoRecipeGlobally = (recipe: string) =>
   safelyQuery(() => sql`
     UPDATE photos

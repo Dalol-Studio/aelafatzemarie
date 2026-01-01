@@ -27,6 +27,7 @@ import { PhotoFormData } from '@/photo/form';
 import FieldsetVisibility from '@/photo/visibility/FieldsetVisibility';
 import { Albums } from '@/album';
 import FieldsetAlbum from '@/album/FieldsetAlbum';
+import FieldsetDate from '@/components/FieldsetDate';
 
 const UPLOAD_BATCH_SIZE = 2;
 
@@ -59,6 +60,9 @@ export default function AdminBatchUploadActions({
   const [tagErrorMessage, setTagErrorMessage] = useState('');
   const [formData, setFormData] = useState<Partial<PhotoFormData>>({});
   const [albumTitles, setAlbumTitles] = useState<string>();
+  const [takenAtOverride, setTakenAtOverride] = useState<string>();
+  const [locationName, setLocationName] = useState<string>();
+  const [priorityOrder, setPriorityOrder] = useState<string>();
 
   const [buttonText, setButtonText] = useState('Add All Uploads');
   const [actionErrorMessage, setActionErrorMessage] = useState('');
@@ -75,6 +79,20 @@ export default function AdminBatchUploadActions({
   ) => {
     const { tags, favorite, excludeFromFeeds, hidden } = formData;
     try {
+      // Convert taken date if provided
+      let takenAtLocal = generateLocalPostgresString();
+      let takenAtNaiveLocal = generateLocalNaivePostgresString();
+      
+      if (takenAtOverride) {
+        const isIsoFormat = takenAtOverride.includes('T') && takenAtOverride.includes('Z');
+        takenAtLocal = isIsoFormat 
+          ? takenAtOverride 
+          : new Date(takenAtOverride).toISOString();
+        takenAtNaiveLocal = isIsoFormat
+          ? takenAtOverride.replace(/T/, ' ').replace(/\.\d+Z$/, '')
+          : takenAtOverride;
+      }
+      
       const stream = await addUploadsAction({
         uploadUrls: urls,
         uploadTitles: titles,
@@ -84,9 +102,11 @@ export default function AdminBatchUploadActions({
           favorite,
           excludeFromFeeds,
           hidden,
+          locationName,
+          priorityOrder,
         },
-        takenAtLocal: generateLocalPostgresString(),
-        takenAtNaiveLocal: generateLocalNaivePostgresString(),
+        takenAtLocal,
+        takenAtNaiveLocal,
         shouldRevalidateAllKeysAndPaths: isFinalBatch,
       });
       for await (const data of readStreamableValue(stream)) {
@@ -94,8 +114,9 @@ export default function AdminBatchUploadActions({
           `Adding ${addedUploadCount.current + 1} of ${uploadUrls.length}`,
         );
         setUrlAddStatuses(current => {
+          if (!data) return current;
           const update = current.map(status =>
-            status.url === data?.url
+            status.url === data.url
               ? {
                 ...status,
                 // Prevent status regressions
@@ -179,6 +200,28 @@ export default function AdminBatchUploadActions({
                 onChange={favorite =>
                   setFormData(data => ({ ...data, favorite }))}
                 readOnly={isAdding}
+              />
+              <FieldsetDate
+                label="Taken At (override)"
+                value={takenAtOverride ?? ''}
+                onChange={setTakenAtOverride}
+                readOnly={isAdding}
+                placeholder="YYYY-MM-DD HH:MM:SS (optional)"
+              />
+              <FieldsetWithStatus
+                label="Location Name"
+                value={locationName ?? ''}
+                onChange={setLocationName}
+                readOnly={isAdding}
+                placeholder="e.g. Paris, France (optional)"
+              />
+              <FieldsetWithStatus
+                label="Priority Order"
+                type="text"
+                value={priorityOrder ?? ''}
+                onChange={setPriorityOrder}
+                readOnly={isAdding}
+                placeholder="e.g. 1.0 (optional, higher = more priority)"
               />
             </div>}
           <div className="flex flex-col sm:flex-row-reverse gap-2">
