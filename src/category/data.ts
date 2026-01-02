@@ -41,7 +41,10 @@ export const NULL_CATEGORY_DATA: CategoryData = {
 
 export const getDataForCategories = (includeHidden?: boolean) => Promise.all([
   SHOW_RECENTS
-    ? getPhotosMetaCached({ recent: true, hidden: includeHidden ? 'include' : 'exclude' })
+    ? getPhotosMetaCached({
+      recent: true,
+      hidden: includeHidden ? 'include' : 'exclude',
+    })
       .then(({ count, dateRange }) => count && dateRange
         ? [{
           count,
@@ -84,7 +87,7 @@ export const getDataForCategories = (includeHidden?: boolean) => Promise.all([
       .catch(() => [])
     : undefined,
   SHOW_ALBUMS
-    ? getAlbumsWithMetaCached() // Albums might need role check too, but for now...
+    ? getAlbumsWithMetaCached()
       .catch(() => [])
     : undefined,
 ]).then(([

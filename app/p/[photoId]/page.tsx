@@ -52,7 +52,8 @@ export async function generateMetadata({
 }:PhotoProps): Promise<Metadata> {
   const { photoId } = await params;
   const session = await auth();
-  const { photo } = await getPhotosPreload(photoId, (session?.user as any)?.role);
+  const role = (session?.user as any)?.role;
+  const { photo } = await getPhotosPreload(photoId, role);
 
   if (!photo) { return {}; }
 

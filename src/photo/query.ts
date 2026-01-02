@@ -345,10 +345,10 @@ export const getUniqueTags = async (includeHidden?: boolean) =>
       GROUP BY tag
       ORDER BY tag ASC
     `).then(({ rows }): Tags => rows.map(({ tag, count, last_modified }) => ({
-      tag,
-      count: parseInt(count, 10),
-      lastModified: last_modified as Date,
-    })))
+    tag,
+    count: parseInt(count, 10),
+    lastModified: last_modified as Date,
+  })))
   , 'getUniqueTags');
 
 export const getUniqueRecipes = async (includeHidden?: boolean) =>
