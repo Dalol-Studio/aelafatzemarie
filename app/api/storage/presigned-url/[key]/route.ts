@@ -22,23 +22,17 @@ export async function GET(
 
   const session = await auth();
   if (session?.user && key) {
-    let client;
-    let command;
+    const client = CURRENT_STORAGE === 'cloudflare-r2'
+      ? await cloudflareR2Client()
+      : CURRENT_STORAGE === 'minio'
+        ? await minioClient()
+        : await awsS3Client();
 
-    switch (CURRENT_STORAGE) {
-      case 'cloudflare-r2':
-        client = await cloudflareR2Client();
-        command = await cloudflareR2PutObjectCommandForKey(key);
-        break;
-      case 'minio':
-        client = await minioClient();
-        command = await minioPutObjectCommandForKey(key);
-        break;
-      default:
-        client = await awsS3Client();
-        command = await awsS3PutObjectCommandForKey(key);
-        break;
-    }
+    const command = CURRENT_STORAGE === 'cloudflare-r2'
+      ? await cloudflareR2PutObjectCommandForKey(key)
+      : CURRENT_STORAGE === 'minio'
+        ? await minioPutObjectCommandForKey(key)
+        : await awsS3PutObjectCommandForKey(key);
     
     const url = await getSignedUrl(client, command, { expiresIn: 3600 });
 

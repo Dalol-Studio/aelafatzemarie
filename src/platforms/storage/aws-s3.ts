@@ -87,7 +87,7 @@ export const awsS3List = async (
 
 export const awsS3Delete = async (Key: string) => {
   const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
-  (await awsS3Client()).send(new DeleteObjectCommand({
+  await (await awsS3Client()).send(new DeleteObjectCommand({
     Bucket: AWS_S3_BUCKET,
     Key,
   }));

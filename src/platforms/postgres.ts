@@ -1,4 +1,4 @@
-import { POSTGRES_SSL_ENABLED } from '@/app/config';
+import { POSTGRES_SSL_ENABLED, IS_BUILDING } from '@/app/config';
 import { removeParamsFromUrl } from '@/utility/url';
 import type { Pool, QueryResult, QueryResultRow } from 'pg';
 
@@ -17,6 +17,7 @@ const getPool = async () => {
         ),
       },
       ...POSTGRES_SSL_ENABLED && { ssl: true },
+      max: IS_BUILDING ? 1 : 10,
     });
   }
   return pool;
