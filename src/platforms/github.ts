@@ -159,9 +159,6 @@ export const getGitHubMeta = async (params: RepoParams) => {
       behindBy: undefined,
       isBehind: undefined,
       didError: false,
-      isForkedFromBase: undefined,
-      behindBy: undefined,
-      isBehind: undefined,
     };
   }
 
