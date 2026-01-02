@@ -164,7 +164,7 @@ const addUpload = async ({
     const uniqueTags = _uniqueTags || await getUniqueTags();
 
     const {
-      title: aiTitle,
+      title: _aiTitle,
       caption: aiCaption,
       tags: aiTags,
       semantic,
@@ -180,9 +180,44 @@ const addUpload = async ({
       uniqueTags,
     });
 
+    // Generate title in format: EJG - Album_SubHead - TAGS - YEAR - ID
+    let albumSubhead = '';
+    if (albumIds && albumIds.length > 0) {
+      const { getAlbumsWithMeta }: any = await import('@/album/query');
+      const albums = await getAlbumsWithMeta();
+      const album = albums.find((a: any) => a.album.id === albumIds[0]);
+      if (album) {
+        albumSubhead = album.album.subhead || '';
+      }
+    }
+    // Use tags as string, separated by ' - '
+    const tagsArr = (tags || aiTags || '')
+      .toString()
+      .split(',')
+      .map((t: string) => t.trim())
+      .filter(Boolean);
+    const tagsString = tagsArr.join(' - ');
+    // Year from takenAt
+    let year = '';
+    const takenAt = formDataFromExif.takenAt || takenAtLocal;
+    if (takenAt) {
+      const d = new Date(takenAt);
+      if (!isNaN(d.getTime())) year = d.getFullYear().toString();
+    }
+    if (!year) year = new Date().getFullYear().toString();
+    // Temporary ID (will be replaced after insert)
+    const tempId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    // Correct order: EJG - albumSubhead - year - tagsString - tempId
+    const generatedTitle = [
+      'EJG',
+      albumSubhead,
+      year,
+      tagsString,
+      tempId,
+    ].filter(Boolean).join(' - ');
     const form: Partial<PhotoFormData> = {
       ...formDataFromExif,
-      title: title || aiTitle,
+      title: generatedTitle,
       caption: caption || aiCaption,
       tags: tags || aiTags,
       excludeFromFeeds,
@@ -321,7 +356,33 @@ export const updatePhotoAction = async (formData: FormData) =>
 
     const albumTitles = getAlbumTitlesFromFormData(formData);
     await addAlbumTitlesToPhoto(albumTitles, photo.id);
-   
+
+    // Generate title in format: EJG - Album_SubHead - TAGS - YEAR - ID
+    let albumSubhead = '';
+    if (albumTitles && albumTitles.length > 0) {
+      const { getAlbumsWithMeta }: any = await import('@/album/query');
+      const albums = await getAlbumsWithMeta();
+      const album = albums.find((a: any) => a.album.title === albumTitles[0]);
+      if (album) {
+        albumSubhead = album.album.subhead || '';
+      }
+    }
+    // Use tags as string, separated by ' - '
+    const tagsArr = (photo.tags || [])
+      .map((t: string) => t.trim())
+      .filter(Boolean);
+    const tagsString = tagsArr.length > 0 ? tagsArr.join(' - ') : '';
+    let year = '';
+    if (photo.takenAt) {
+      const d = new Date(photo.takenAt);
+      if (!isNaN(d.getTime())) year = d.getFullYear().toString();
+    }
+    if (!year) year = new Date().getFullYear().toString();
+    const generatedTitle = (
+      `EJG - ${albumSubhead} - ${year} - ${tagsString} - ${photo.id}`
+    ).replace(/\s+/g, ' ').trim();
+    photo.title = generatedTitle;
+
     let urlToDelete: string | undefined;
     if (await shouldBackfillPhotoStorage(photo)) {
       const url = await convertUploadToPhoto({
@@ -366,6 +427,55 @@ export const updateTakenAtMultiplePhotosAction = async (
 ) =>
   runAuthenticatedAdminServerAction(async () => {
     await updateTakenAtForPhotos(takenAt, takenAtNaive, photoIds);
+    revalidateAllKeysAndPaths();
+  });
+
+export const generateTitlesForPhotosAction = async (photoIds: string[]) =>
+  runAuthenticatedAdminServerAction(async () => {
+    const { getAlbumsWithMeta, getAlbumTitlesForPhoto } =
+      await import('@/album/query');
+    const albumsWithMeta = await getAlbumsWithMeta();
+
+    for (const photoId of photoIds) {
+      const photo = await getPhoto(photoId, true);
+      if (photo) {
+        // Generate title in format: EJG - Album_SubHead - Year - Tags - ID
+        let albumSubhead = '';
+        const albumTitlesForPhoto = await getAlbumTitlesForPhoto(photoId);
+        if (albumTitlesForPhoto.length > 0) {
+          const album = albumsWithMeta.find((a: any) =>
+            a.album.title === albumTitlesForPhoto[0]);
+          if (album) {
+            albumSubhead = album.album.subhead || '';
+          }
+        }
+        
+        const tagsArr = (photo.tags || [])
+          .map((t: string) => t.trim())
+          .filter(Boolean);
+        const tagsString = tagsArr.length > 0 ? tagsArr.join(' - ') : '';
+        
+        let year = '';
+        if (photo.takenAt) {
+          const d = new Date(photo.takenAt);
+          if (!isNaN(d.getTime())) year = d.getFullYear().toString();
+        }
+        if (!year) year = new Date().getFullYear().toString();
+        
+        const generatedTitle = [
+          'EJG',
+          albumSubhead,
+          year,
+          tagsString,
+          photo.id,
+        ].filter(Boolean).join(' - ');
+
+        await updatePhoto({
+          ...convertPhotoToPhotoDbInsert(photo),
+          title: generatedTitle,
+        });
+      }
+    }
     revalidateAllKeysAndPaths();
   });
 

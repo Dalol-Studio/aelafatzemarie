@@ -10,6 +10,7 @@ import { replacePathWithEvent } from '@/utility/url';
 import { isElementPartiallyInViewport } from '@/utility/dom';
 
 export const DATA_KEY_PHOTO_GRID = 'data-photo-grid';
+export const DATA_KEY_PHOTO_ID = 'data-photo-id';
 
 export default function SelectPhotosProvider({
   children,
@@ -38,6 +39,15 @@ export default function SelectPhotosProvider({
   const getPhotoGridElements = useCallback(() =>
     document.querySelectorAll(`[${DATA_KEY_PHOTO_GRID}=true]`)
   , []);
+
+  const selectAllPhotos = useCallback(() => {
+    const photoIds = Array.from(
+      document.querySelectorAll(`[${DATA_KEY_PHOTO_ID}]`),
+    )
+      .map(element => element.getAttribute(DATA_KEY_PHOTO_ID))
+      .filter(Boolean) as string[];
+    setSelectedPhotoIds(photoIds);
+  }, []);
 
   useEffect(() => {
     if (isUserSignedIn) {
@@ -86,6 +96,7 @@ export default function SelectPhotosProvider({
       stopSelectingPhotos,
       selectedPhotoIds,
       setSelectedPhotoIds,
+      selectAllPhotos,
       isPerformingSelectEdit,
       setIsPerformingSelectEdit,
     }}>

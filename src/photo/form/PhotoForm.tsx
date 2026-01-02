@@ -239,15 +239,77 @@ export default function PhotoForm({
     }
   };
 
+  const generateTitle = useCallback(() => {
+    // Album subhead
+    let albumSubhead = '';
+    let year = '';
+    if (albumTitles) {
+      const split = albumTitles.split(',');
+      const albumTitle = split[0]?.trim() || '';
+      if (albums && Array.isArray(albums)) {
+        const found = albums.find(a => a.album.title === albumTitle);
+        if (found && found.album.subhead) albumSubhead = found.album.subhead;
+      }
+    }
+    // Use id if present, else fallback
+    const id = formData.id || initialPhotoForm.id || 'ID';
+    // Year from takenAt if available
+    if (formData.takenAt) {
+      const d = new Date(formData.takenAt);
+      if (!isNaN(d.getTime())) year = d.getFullYear().toString();
+    }
+    if (!year) year = new Date().getFullYear().toString();
+    // Tags as array, separated by ' - '
+    const tagsArr = (formData.tags || '')
+      .toString()
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const tagsString = tagsArr.join(' - ');
+    const generatedTitle = [
+      'EJG',
+      albumSubhead,
+      year,
+      tagsString,
+      id
+    ].filter(Boolean).join(' - ');
+    setFormData(data => ({ ...data, title: generatedTitle }));
+    onTitleChange?.(generatedTitle);
+  }, [albumTitles, albums, formData.tags, formData.id, initialPhotoForm.id, onTitleChange]);
+
   const accessoryForField = (key: keyof PhotoFormData) => {
+    if (key === 'title') {
+      return (
+        <div className="flex gap-1 items-center">
+          {aiContent && (
+            <AiButton
+              tabIndex={-1}
+              aiContent={aiContent}
+              requestFields={['title']}
+              shouldConfirm={Boolean(formData.title)}
+              className="h-full"
+            />
+          )}
+          <button
+            type="button"
+            className="button px-2 py-1 text-xs"
+            title="Generate title by convention"
+            onClick={generateTitle}
+            style={{ marginLeft: 4 }}
+          >
+            Auto Title
+          </button>
+        </div>
+      );
+    }
     if (aiContent) {
       switch (key) {
-        case 'title':
+        case 'caption':
           return <AiButton
             tabIndex={-1}
             aiContent={aiContent}
-            requestFields={['title']}
-            shouldConfirm={Boolean(formData.title)}
+            requestFields={['caption']}
+            shouldConfirm={Boolean(formData.caption)}
             className="h-full"
           />;
         case 'caption':

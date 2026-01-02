@@ -1,10 +1,3 @@
-import {
-  S3Client,
-  ListObjectsCommand,
-  PutObjectCommand,
-  DeleteObjectCommand,
-  CopyObjectCommand,
-} from '@aws-sdk/client-s3';
 import { StorageListResponse, generateStorageId } from '.';
 import { removeUrlProtocol } from '@/utility/url';
 import { formatBytes } from '@/utility/number';
@@ -31,14 +24,17 @@ export const CLOUDFLARE_R2_BASE_URL_PRIVATE =
     ? `${CLOUDFLARE_R2_ENDPOINT}/${CLOUDFLARE_R2_BUCKET}`
     : undefined;
 
-export const cloudflareR2Client = () => new S3Client({
-  region: 'auto',
-  endpoint: CLOUDFLARE_R2_ENDPOINT,
-  credentials: {
-    accessKeyId: CLOUDFLARE_R2_ACCESS_KEY,
-    secretAccessKey: CLOUDFLARE_R2_SECRET_ACCESS_KEY,
-  },
-});
+export const cloudflareR2Client = async () => {
+  const { S3Client } = await import('@aws-sdk/client-s3');
+  return new S3Client({
+    region: 'auto',
+    endpoint: CLOUDFLARE_R2_ENDPOINT,
+    credentials: {
+      accessKeyId: CLOUDFLARE_R2_ACCESS_KEY,
+      secretAccessKey: CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    },
+  });
+};
 
 const urlForKey = (key?: string, isPublic = true) => isPublic
   ? `${CLOUDFLARE_R2_BASE_URL_PUBLIC}/${key}`
@@ -52,31 +48,36 @@ export const isUrlFromCloudflareR2 = (url?: string) => (
   url?.startsWith(CLOUDFLARE_R2_BASE_URL_PUBLIC)
 );
 
-export const cloudflareR2PutObjectCommandForKey = (Key: string) =>
-  new PutObjectCommand({ Bucket: CLOUDFLARE_R2_BUCKET, Key });
+export const cloudflareR2PutObjectCommandForKey = async (Key: string) => {
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  return new PutObjectCommand({ Bucket: CLOUDFLARE_R2_BUCKET, Key });
+};
 
 export const cloudflareR2Put = async (
   file: Buffer,
   fileName: string,
-): Promise<string> =>
-  cloudflareR2Client().send(new PutObjectCommand({
+): Promise<string> => {
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  return (await cloudflareR2Client()).send(new PutObjectCommand({
     Bucket: CLOUDFLARE_R2_BUCKET,
     Key: fileName,
     Body: file,
   }))
     .then(() => urlForKey(fileName));
+};
 
 export const cloudflareR2Copy = async (
   fileNameSource: string,
   fileNameDestination: string,
   addRandomSuffix?: boolean,
 ) => {
+  const { CopyObjectCommand } = await import('@aws-sdk/client-s3');
   const name = fileNameSource.split('.')[0];
   const extension = fileNameSource.split('.')[1];
   const Key = addRandomSuffix
     ? `${name}-${generateStorageId()}.${extension}`
     : fileNameDestination;
-  return cloudflareR2Client().send(new CopyObjectCommand({
+  return (await cloudflareR2Client()).send(new CopyObjectCommand({
     Bucket: CLOUDFLARE_R2_BUCKET,
     CopySource: `${CLOUDFLARE_R2_BUCKET}/${fileNameSource}`,
     Key,
@@ -86,8 +87,9 @@ export const cloudflareR2Copy = async (
 
 export const cloudflareR2List = async (
   Prefix: string,
-): Promise<StorageListResponse> =>
-  cloudflareR2Client().send(new ListObjectsCommand({
+): Promise<StorageListResponse> => {
+  const { ListObjectsCommand } = await import('@aws-sdk/client-s3');
+  return (await cloudflareR2Client()).send(new ListObjectsCommand({
     Bucket: CLOUDFLARE_R2_BUCKET,
     Prefix,
   }))
@@ -97,9 +99,11 @@ export const cloudflareR2List = async (
       uploadedAt: LastModified,
       size: Size ? formatBytes(Size) : undefined,
     })) ?? []);
+};
 
 export const cloudflareR2Delete = async (Key: string) => {
-  cloudflareR2Client().send(new DeleteObjectCommand({
+  const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
+  (await cloudflareR2Client()).send(new DeleteObjectCommand({
     Bucket: CLOUDFLARE_R2_BUCKET,
     Key,
   }));

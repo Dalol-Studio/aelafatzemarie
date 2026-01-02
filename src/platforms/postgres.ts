@@ -1,24 +1,33 @@
 import { POSTGRES_SSL_ENABLED } from '@/app/config';
 import { removeParamsFromUrl } from '@/utility/url';
-import { Pool, QueryResult, QueryResultRow } from 'pg';
-
-const pool = new Pool({
-  ...process.env.POSTGRES_URL && {
-    connectionString: removeParamsFromUrl(
-      process.env.POSTGRES_URL,
-      ['sslmode'],
-    ),
-  },
-  ...POSTGRES_SSL_ENABLED && { ssl: true },
-});
+import type { Pool, QueryResult, QueryResultRow } from 'pg';
 
 export type Primitive = string | number | boolean | undefined | null;
+
+let pool: Pool;
+
+const getPool = async () => {
+  if (!pool) {
+    const { Pool: PoolClass } = await import('pg');
+    pool = new PoolClass({
+      ...process.env.POSTGRES_URL && {
+        connectionString: removeParamsFromUrl(
+          process.env.POSTGRES_URL,
+          ['sslmode'],
+        ),
+      },
+      ...POSTGRES_SSL_ENABLED && { ssl: true },
+    });
+  }
+  return pool;
+};
 
 export const query = async <T extends QueryResultRow = any>(
   queryString: string,
   values: Primitive[] = [],
 ) => {
-  const client = await pool.connect();
+  const p = await getPool();
+  const client = await p.connect();
   let response: QueryResult<T>;
   try {
     response = await client.query<T>(queryString, values);

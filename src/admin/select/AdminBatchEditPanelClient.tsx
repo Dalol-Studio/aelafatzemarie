@@ -8,7 +8,11 @@ import { IoCloseSharp } from 'react-icons/io5';
 import { useEffect, useRef, useState } from 'react';
 import { TAG_FAVS, Tags } from '@/tag';
 import FieldsetTag from '@/tag/FieldsetTag';
-import { tagMultiplePhotosAction, updateTakenAtMultiplePhotosAction } from '@/photo/actions';
+import {
+  tagMultiplePhotosAction,
+  updateTakenAtMultiplePhotosAction,
+  generateTitlesForPhotosAction,
+} from '@/photo/actions';
 import { toastSuccess } from '@/toast';
 import DeletePhotosButton from '@/admin/DeletePhotosButton';
 import { photoQuantityText } from '@/photo';
@@ -23,6 +27,7 @@ import FieldsetAlbum from '@/album/FieldsetAlbum';
 import IconAlbum from '@/components/icons/IconAlbum';
 import { addPhotosToAlbumsAction } from '@/album/actions';
 import FieldsetDate from '@/components/FieldsetDate';
+import { HiSparkles } from 'react-icons/hi';
 
 export default function AdminBatchEditPanelClient({
   uniqueAlbums,
@@ -38,6 +43,7 @@ export default function AdminBatchEditPanelClient({
     isSelectingPhotos,
     stopSelectingPhotos,
     selectedPhotoIds,
+    selectAllPhotos,
     isPerformingSelectEdit,
     setIsPerformingSelectEdit,
   } = useSelectPhotosState();
@@ -66,15 +72,31 @@ export default function AdminBatchEditPanelClient({
     selectedPhotoIds?.length === 0;
 
   const renderPhotoCTA = selectedPhotoIds?.length === 0
-    ? <>
-      <FaArrowDown />
-      <ResponsiveText shortText="Select">
-        Select photos below
+    ? <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <FaArrowDown />
+        <ResponsiveText shortText="Select">
+          Select photos below
+        </ResponsiveText>
+      </div>
+      <LoaderButton
+        styleAs="link"
+        onClick={selectAllPhotos}
+      >
+        Select All
+      </LoaderButton>
+    </div>
+    : <div className="flex items-center gap-3">
+      <ResponsiveText shortText={photosText}>
+        {photosText} selected
       </ResponsiveText>
-    </>
-    : <ResponsiveText shortText={photosText}>
-      {photosText} selected
-    </ResponsiveText>;
+      <LoaderButton
+        styleAs="link"
+        onClick={selectAllPhotos}
+      >
+        Select All
+      </LoaderButton>
+    </div>;
 
   const renderActions = isInTagMode || isInAlbumMode || isInDateMode
     ? <>
@@ -210,6 +232,24 @@ export default function AdminBatchEditPanelClient({
         Date
       </LoaderButton>
       <LoaderButton
+        icon={<HiSparkles />}
+        disabled={isFormDisabled}
+        confirmText={
+          `Are you sure you want to autogenerate titles for ${photosText}?`
+        }
+        onClick={() => {
+          setIsPerformingSelectEdit?.(true);
+          generateTitlesForPhotosAction(selectedPhotoIds ?? [])
+            .then(() => {
+              toastSuccess(`${photosText} titles generated`);
+              stopSelectingPhotos?.();
+            })
+            .finally(() => setIsPerformingSelectEdit?.(false));
+        }}
+      >
+        Title
+      </LoaderButton>
+      <LoaderButton
         icon={<IoCloseSharp size={19} />}
         onClick={stopSelectingPhotos}
       />
@@ -267,18 +307,18 @@ export default function AdminBatchEditPanelClient({
               />
               : isInTagMode
                 ? <FieldsetTag
-                tags={tags}
-                tagOptions={uniqueTags}
-                placeholder={`Tag ${photosText} ...`}
-                onChange={setTags}
-                onError={setTagErrorMessage}
-                readOnly={isPerformingSelectEdit}
-                openOnLoad
-                hideLabel
-              />
-              : <div className="text-base flex gap-2 items-center">
-                {renderPhotoCTA}
-              </div>}
+                  tags={tags}
+                  tagOptions={uniqueTags}
+                  placeholder={`Tag ${photosText} ...`}
+                  onChange={setTags}
+                  onError={setTagErrorMessage}
+                  readOnly={isPerformingSelectEdit}
+                  openOnLoad
+                  hideLabel
+                />
+                : <div className="text-base flex gap-2 items-center">
+                  {renderPhotoCTA}
+                </div>}
         </Note>
         {tagErrorMessage &&
           <div className="text-error pl-4">

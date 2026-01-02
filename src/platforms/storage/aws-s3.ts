@@ -1,10 +1,3 @@
-import {
-  S3Client,
-  CopyObjectCommand,
-  DeleteObjectCommand,
-  ListObjectsCommand,
-  PutObjectCommand,
-} from '@aws-sdk/client-s3';
 import { StorageListResponse, generateStorageId } from '.';
 import { formatBytes } from '@/utility/number';
 
@@ -17,45 +10,57 @@ export const AWS_S3_BASE_URL = AWS_S3_BUCKET && AWS_S3_REGION
   ? `https://${AWS_S3_BUCKET}.s3.${AWS_S3_REGION}.amazonaws.com`
   : undefined;
 
-export const awsS3Client = () => new S3Client({
-  region: AWS_S3_REGION,
-  credentials: {
-    accessKeyId: AWS_S3_ACCESS_KEY,
-    secretAccessKey: AWS_S3_SECRET_ACCESS_KEY,
-  },
-});
+export const awsS3Client = async () => {
+  const { S3Client } = await import('@aws-sdk/client-s3');
+  return new S3Client({
+    region: AWS_S3_REGION,
+    credentials: {
+      accessKeyId: AWS_S3_ACCESS_KEY,
+      secretAccessKey: AWS_S3_SECRET_ACCESS_KEY,
+    },
+  });
+};
 
 const urlForKey = (key?: string) => `${AWS_S3_BASE_URL}/${key}`;
 
 export const isUrlFromAwsS3 = (url?: string) =>
   AWS_S3_BASE_URL && url?.startsWith(AWS_S3_BASE_URL);
 
-export const awsS3PutObjectCommandForKey = (Key: string) =>
-  new PutObjectCommand({ Bucket: AWS_S3_BUCKET, Key, ACL: 'public-read' });
+export const awsS3PutObjectCommandForKey = async (Key: string) => {
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  return new PutObjectCommand({
+    Bucket: AWS_S3_BUCKET,
+    Key,
+    ACL: 'public-read',
+  });
+};
 
 export const awsS3Put = async (
   file: Buffer,
   fileName: string,
-): Promise<string> =>
-  awsS3Client().send(new PutObjectCommand({
+): Promise<string> => {
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  return (await awsS3Client()).send(new PutObjectCommand({
     Bucket: AWS_S3_BUCKET,
     Key: fileName,
     Body: file,
     ACL: 'public-read',
   }))
     .then(() => urlForKey(fileName));
+};
 
 export const awsS3Copy = async (
   fileNameSource: string,
   fileNameDestination: string,
   addRandomSuffix?: boolean,
 ) => {
+  const { CopyObjectCommand } = await import('@aws-sdk/client-s3');
   const name = fileNameSource.split('.')[0];
   const extension = fileNameSource.split('.')[1];
   const Key = addRandomSuffix
     ? `${name}-${generateStorageId()}.${extension}`
     : fileNameDestination;
-  return awsS3Client().send(new CopyObjectCommand({
+  return (await awsS3Client()).send(new CopyObjectCommand({
     Bucket: AWS_S3_BUCKET,
     CopySource: fileNameSource,
     Key,
@@ -66,8 +71,9 @@ export const awsS3Copy = async (
 
 export const awsS3List = async (
   Prefix: string,
-): Promise<StorageListResponse> =>
-  awsS3Client().send(new ListObjectsCommand({
+): Promise<StorageListResponse> => {
+  const { ListObjectsCommand } = await import('@aws-sdk/client-s3');
+  return (await awsS3Client()).send(new ListObjectsCommand({
     Bucket: AWS_S3_BUCKET,
     Prefix,
   }))
@@ -77,9 +83,11 @@ export const awsS3List = async (
       uploadedAt: LastModified,
       size: Size ? formatBytes(Size) : undefined,
     })) ?? []);
+};
 
 export const awsS3Delete = async (Key: string) => {
-  awsS3Client().send(new DeleteObjectCommand({
+  const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
+  (await awsS3Client()).send(new DeleteObjectCommand({
     Bucket: AWS_S3_BUCKET,
     Key,
   }));

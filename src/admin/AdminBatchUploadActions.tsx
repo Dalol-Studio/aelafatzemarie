@@ -84,7 +84,8 @@ export default function AdminBatchUploadActions({
       let takenAtNaiveLocal = generateLocalNaivePostgresString();
       
       if (takenAtOverride) {
-        const isIsoFormat = takenAtOverride.includes('T') && takenAtOverride.includes('Z');
+        const isIsoFormat = takenAtOverride.includes('T') &&
+          takenAtOverride.includes('Z');
         takenAtLocal = isIsoFormat 
           ? takenAtOverride 
           : new Date(takenAtOverride).toISOString();

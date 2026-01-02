@@ -5,12 +5,13 @@ import {
 } from '@/app/config';
 import { FastAverageColor } from 'fast-average-color';
 import { Oklch, PhotoColorData } from './client';
-import sharp from 'sharp';
 import { extractColors } from 'extract-colors';
 import { getImageBase64FromUrl } from '../server';
 import { generateOpenAiImageQuery } from '@/platforms/openai';
 import { calculateColorSort } from './sort';
 import { getOptimizedPhotoUrlForManipulation } from '../storage';
+
+const getSharp = async () => (await import('sharp')).default;
 
 const NULL_RGB = { r: 0, g: 0, b: 0 };
 
@@ -32,7 +33,7 @@ const getImageDataFromUrl = async (_url: string) => {
   const url = getOptimizedPhotoUrlForManipulation(_url, IS_PREVIEW);
   const imageBuffer = await fetch(decodeURIComponent(url))
     .then(res => res.arrayBuffer());
-  const image = sharp(imageBuffer);
+  const image = (await getSharp())(imageBuffer);
   const { width, height } = await image.metadata();
   const buffer = await image.ensureAlpha().raw().toBuffer();
   return {

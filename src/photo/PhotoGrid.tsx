@@ -11,7 +11,10 @@ import SelectTileOverlay from '@/components/SelectTileOverlay';
 import { ReactNode } from 'react';
 import { GRID_GAP_CLASSNAME } from '@/components';
 import { useSelectPhotosState } from '@/admin/select/SelectPhotosState';
-import { DATA_KEY_PHOTO_GRID } from '@/admin/select/SelectPhotosProvider';
+import {
+  DATA_KEY_PHOTO_GRID,
+  DATA_KEY_PHOTO_ID,
+} from '@/admin/select/SelectPhotosProvider';
 
 export default function PhotoGrid({
   photos,
@@ -69,6 +72,7 @@ export default function PhotoGrid({
               ? 'grid-cols-2 xs:grid-cols-4 lg:grid-cols-6'
               : 'grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4',
           'items-center',
+          'admin-select-all-container',
         )}
         type={animate === false ? 'none' : undefined}
         canStart={canStart}
@@ -91,6 +95,7 @@ export default function PhotoGrid({
                 aspectRatio: GRID_ASPECT_RATIO,
               },
             }}
+            {...{ [DATA_KEY_PHOTO_ID]: photo.id }}
           >
             <PhotoMedium
               className={clsx(

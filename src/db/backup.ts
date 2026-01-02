@@ -12,7 +12,7 @@ export const backupDatabaseToLocalFs = async () => {
 
   // Get all table names
   const tablesResult = await query<{ tablename: string }>(
-    "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
+    'SELECT tablename FROM pg_tables WHERE schemaname = \'public\'',
   );
   
   const tables = tablesResult.rows.map(row => row.tablename);
@@ -28,13 +28,13 @@ export const backupDatabaseToLocalFs = async () => {
       
       await fs.writeFile(
         filePath, 
-        JSON.stringify(dataResult.rows, null, 2)
+        JSON.stringify(dataResult.rows, null, 2),
       );
       
       backupMeta.tables.push({
         name: table,
         rowCount: dataResult.rowCount,
-        file: `${table}.json`
+        file: `${table}.json`,
       });
       
       console.log(`Backed up ${table}: ${dataResult.rowCount} rows`);
@@ -42,14 +42,14 @@ export const backupDatabaseToLocalFs = async () => {
       console.error(`Failed to backup table ${table}:`, error);
       backupMeta.tables.push({
         name: table,
-        error: String(error)
+        error: String(error),
       });
     }
   }
 
   await fs.writeFile(
     path.join(BACKUP_DIR, 'backup-meta.json'),
-    JSON.stringify(backupMeta, null, 2)
+    JSON.stringify(backupMeta, null, 2),
   );
 
   return backupMeta;

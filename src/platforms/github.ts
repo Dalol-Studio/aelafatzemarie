@@ -144,6 +144,21 @@ export const getGitHubMeta = async (params: RepoParams) => {
   let behindBy: number | undefined;
   let didError: boolean = false;
 
+  if (
+    !params.owner && !TEMPLATE_REPO_OWNER ||
+    !params.repo && !TEMPLATE_REPO_NAME
+  ) {
+    return {
+      ...params,
+      urlOwner,
+      urlRepo,
+      urlBranch,
+      urlCommit,
+      isBaseRepo,
+      didError: false,
+    };
+  }
+
   try {
     const results = await Promise.all([
       getIsRepoForkedFromBase(params),

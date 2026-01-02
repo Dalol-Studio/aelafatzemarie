@@ -24,8 +24,9 @@ export const capitalizeWords = (string = '') =>
 export const parameterize = (
   string: string,
   shouldRemoveNonAlphanumeric?: boolean,
-) =>
-  string
+  preserveCase?: boolean,
+) => {
+  const result = string
     .trim()
     // Replace spaces, underscores, slashes, pluses, pipes, dashes with dashes
     .replaceAll(/[\s_–—+&|]/gi, '-')
@@ -38,8 +39,12 @@ export const parameterize = (
         ? /([^a-z0-9-])/gi
         : /''/gi,
       '',
-    )
-    .toLocaleLowerCase();
+    );
+
+  return (preserveCase ? result : result.toLocaleLowerCase())
+    .replaceAll(/-+/g, '-') // Collapse multiple hyphens
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+};
 
 export const formatStringForXml = (string: string) =>
   string

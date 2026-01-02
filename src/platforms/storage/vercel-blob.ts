@@ -1,5 +1,4 @@
 import { PATH_API_VERCEL_BLOB_UPLOAD } from '@/app/path';
-import { copy, del, list, put } from '@vercel/blob';
 import { upload } from '@vercel/blob/client';
 import { getFileNamePartsFromStorageUrl, StorageListResponse } from '.';
 import { formatBytes } from '@/utility/number';
@@ -29,33 +28,43 @@ export const vercelBlobUploadFromClient = async (
   )
     .then(({ url }) => url);
 
-export const vercelBlobPut = (
+export const vercelBlobPut = async (
   file: Buffer,
   fileName: string,
-): Promise<string> =>
-  put(fileName, file, { access: 'public' })
+): Promise<string> => {
+  const { put } = await import('@vercel/blob');
+  return put(fileName, file, { access: 'public' })
     .then(({ url }) => url);
+};
 
-export const vercelBlobCopy = (
+export const vercelBlobCopy = async (
   sourceUrl: string,
   destinationFileName: string,
   addRandomSuffix?: boolean,
-): Promise<string> =>
-  copy(
+): Promise<string> => {
+  const { copy } = await import('@vercel/blob');
+  return copy(
     sourceUrl,
     destinationFileName,
     { access: 'public', addRandomSuffix },
   )
     .then(({ url }) => url);
+};
 
-export const vercelBlobDelete = (fileName: string) => del(fileName);
+export const vercelBlobDelete = async (fileName: string) => {
+  const { del } = await import('@vercel/blob');
+  return del(fileName);
+};
 
-export const vercelBlobList = (
+export const vercelBlobList = async (
   prefix: string,
-): Promise<StorageListResponse> => list({ prefix })
-  .then(({ blobs }) => blobs.map(({ url, uploadedAt, size }) => ({
-    url,
-    fileName: getFileNamePartsFromStorageUrl(url).fileName,
-    uploadedAt,
-    size: formatBytes(size),
-  })));
+): Promise<StorageListResponse> => {
+  const { list } = await import('@vercel/blob');
+  return list({ prefix })
+    .then(({ blobs }) => blobs.map(({ url, uploadedAt, size }) => ({
+      url,
+      fileName: getFileNamePartsFromStorageUrl(url).fileName,
+      uploadedAt,
+      size: formatBytes(size),
+    })));
+};

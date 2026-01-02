@@ -184,7 +184,6 @@ export default function AdminAppMenu({
       label: 'Backup Database',
       icon: <IconGrSync className="translate-y-[0.5px]" />,
       action: () => {
-        // eslint-disable-next-line no-alert
         if (confirm('Backup database to local storage?')) {
           backupDatabaseAction()
             .then(() => alert('Backup completed'))

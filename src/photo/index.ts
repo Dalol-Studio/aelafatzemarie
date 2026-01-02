@@ -382,7 +382,7 @@ export const getKeywordsForPhoto = (photo: Photo) =>
 
 export const downloadFileNameForPhoto = (photo: Photo) =>
   photo.title
-    ? `${parameterize(photo.title)}.${photo.extension}`
+    ? `${parameterize(photo.title, false, true)}.${photo.extension}`
     : photo.url.split('/').pop() || 'download';
 
 export const doesPhotoNeedBlurCompatibility = (photo: Photo) =>

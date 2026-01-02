@@ -1,10 +1,3 @@
-import {
-  S3Client,
-  CopyObjectCommand,
-  ListObjectsCommand,
-  PutObjectCommand,
-  DeleteObjectCommand,
-} from '@aws-sdk/client-s3';
 import { StorageListResponse, generateStorageId } from '.';
 import { formatBytes } from '@/utility/number';
 
@@ -24,46 +17,54 @@ export const MINIO_BASE_URL = ENDPOINT
   ? `${ENDPOINT}/${MINIO_BUCKET}`
   : undefined;
 
-export const minioClient = () => new S3Client({
-  region: 'us-east-1',
-  endpoint: ENDPOINT,
-  credentials: {
-    accessKeyId: MINIO_ACCESS_KEY,
-    secretAccessKey: MINIO_SECRET_ACCESS_KEY,
-  },
-  forcePathStyle: true,
-});
+export const minioClient = async () => {
+  const { S3Client } = await import('@aws-sdk/client-s3');
+  return new S3Client({
+    region: 'us-east-1',
+    endpoint: ENDPOINT,
+    credentials: {
+      accessKeyId: MINIO_ACCESS_KEY,
+      secretAccessKey: MINIO_SECRET_ACCESS_KEY,
+    },
+    forcePathStyle: true,
+  });
+};
 
 const urlForKey = (key?: string) => `${MINIO_BASE_URL}/${key}`;
 
 export const isUrlFromMinio = (url?: string) =>
   MINIO_BASE_URL && url?.startsWith(MINIO_BASE_URL);
 
-export const minioPutObjectCommandForKey = (Key: string) =>
-  new PutObjectCommand({ Bucket: MINIO_BUCKET, Key });
+export const minioPutObjectCommandForKey = async (Key: string) => {
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  return new PutObjectCommand({ Bucket: MINIO_BUCKET, Key });
+};
 
 export const minioPut = async (
   file: Buffer,
   fileName: string,
-): Promise<string> =>
-  minioClient().send(new PutObjectCommand({
+): Promise<string> => {
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  return (await minioClient()).send(new PutObjectCommand({
     Bucket: MINIO_BUCKET,
     Key: fileName,
     Body: file,
   }))
     .then(() => urlForKey(fileName));
+};
 
 export const minioCopy = async (
   fileNameSource: string,
   fileNameDestination: string,
   addRandomSuffix?: boolean,
 ) => {
+  const { CopyObjectCommand } = await import('@aws-sdk/client-s3');
   const name = fileNameSource.split('.')[0];
   const extension = fileNameSource.split('.')[1];
   const Key = addRandomSuffix
     ? `${name}-${generateStorageId()}.${extension}`
     : fileNameDestination;
-  return minioClient().send(new CopyObjectCommand({
+  return (await minioClient()).send(new CopyObjectCommand({
     Bucket: MINIO_BUCKET,
     // Bucket behavior seems to differ from R2 + S3
     CopySource: `${MINIO_BUCKET}/${fileNameSource}`,
@@ -74,8 +75,9 @@ export const minioCopy = async (
 
 export const minioList = async (
   Prefix: string,
-): Promise<StorageListResponse> =>
-  minioClient().send(new ListObjectsCommand({
+): Promise<StorageListResponse> => {
+  const { ListObjectsCommand } = await import('@aws-sdk/client-s3');
+  return (await minioClient()).send(new ListObjectsCommand({
     Bucket: MINIO_BUCKET,
     Prefix,
   }))
@@ -85,11 +87,13 @@ export const minioList = async (
       uploadedAt: LastModified,
       size: Size ? formatBytes(Size) : undefined,
     })) ?? []);
+};
 
 export const minioDelete = async (Key: string): Promise<void> => {
+  const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
   const deleteObjectCommand = new DeleteObjectCommand({
     Bucket: MINIO_BUCKET,
     Key,
   });
-  await minioClient().send(deleteObjectCommand);
+  await (await minioClient()).send(deleteObjectCommand);
 };

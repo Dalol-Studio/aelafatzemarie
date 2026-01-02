@@ -1,4 +1,4 @@
-import fs from 'fs/promises';
+import type { Sharp } from 'sharp';
 import path from 'path';
 import { deleteFilesWithPrefix } from '@/platforms/storage/server';
 import { getFileNamePartsFromStorageUrl } from '@/platforms/storage';
@@ -9,7 +9,9 @@ import {
 } from '@/platforms/fujifilm/simulation';
 import { ExifData, ExifParserFactory } from 'ts-exif-parser';
 import { PhotoFormData } from './form';
-import sharp, { Sharp } from 'sharp';
+
+const getSharp = async () => (await import('sharp')).default;
+const getFs = async () => await import('fs/promises');
 import {
   GEO_PRIVACY_ENABLED,
   PRESERVE_ORIGINAL_UPLOADS,
@@ -77,10 +79,10 @@ export const extractImageDataFromBlobPath = async (
 
   const fileBytes = blobPath
     ? url.startsWith('/')
-      ? await fs.readFile(path.join(process.cwd(), 'public', url))
-        .then(data =>
+      ? await (await getFs()).readFile(path.join(process.cwd(), 'public', url))
+        .then((data: Buffer) =>
           data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength))
-        .catch(e => {
+        .catch((e: Error) => {
           error = `Error reading file from ${url}: "${e.message}"`;
           return undefined;
         }) as ArrayBuffer
@@ -165,12 +167,14 @@ export const extractImageDataFromBlobPath = async (
 const generateBase64 = async (
   image: ArrayBuffer,
   middleware?: (sharp: Sharp) => Sharp,
-) => 
-  (middleware ? middleware(sharp(image)) : sharp(image))
+) => {
+  const sharpInstance = await getSharp();
+  return (middleware ? middleware(sharpInstance(image)) : sharpInstance(image))
     .withMetadata()
     .toFormat('jpeg', { quality: IMAGE_QUALITY_DEFAULT })
     .toBuffer()
     .then(data => `data:image/jpeg;base64,${data.toString('base64')}`);
+};
 
 const resizeImage = async (
   image: ArrayBuffer,
@@ -222,7 +226,7 @@ export const resizeImageToBytes = async (
   width: number,
   quality = IMAGE_QUALITY_DEFAULT,
 ) => 
-  sharp(image)
+  (await getSharp())(image)
     .resize(width)
     .toFormat('jpeg', { quality })
     .toBuffer();
@@ -230,7 +234,7 @@ export const resizeImageToBytes = async (
 const GPS_NULL_STRING = '-';
 
 export const removeGpsData = async (image: ArrayBuffer) =>
-  sharp(image)
+  (await getSharp())(image)
     .withExifMerge({
       IFD3: {
         GPSMapDatum: GPS_NULL_STRING,

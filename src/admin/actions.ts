@@ -129,5 +129,5 @@ export const testConnectionsAction = async () =>
 
 export const backupDatabaseAction = async () =>
   runAuthenticatedAdminServerAction(() =>
-    import('@/db/backup').then(mod => mod.backupDatabaseToLocalFs())
+    import('@/db/backup').then(mod => mod.backupDatabaseToLocalFs()),
   );

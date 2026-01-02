@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-01-02T16:21:57.463Z",
+  "tables": [
+    {
+      "name": "photos",
+      "rowCount": 58,
+      "file": "photos.json"
+    },
+    {
+      "name": "albums",
+      "rowCount": 2,
+      "file": "albums.json"
+    },
+    {
+      "name": "album_photo",
+      "rowCount": 58,
+      "file": "album_photo.json"
+    }
+  ]
+}
