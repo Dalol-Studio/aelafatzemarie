@@ -8,14 +8,14 @@ export default async function CommandK() {
   const [
     count,
     categories,
+    appText,
   ] = await Promise.all([
     getPhotosMetaCached()
       .then(({ count }) => count)
       .catch(() => 0),
     getDataForCategoriesCached(),
+    getAppText(),
   ]);
-
-  const appText = await getAppText();
 
   return (
     <CommandKClient
