@@ -102,11 +102,18 @@ export default function PhotoGridSidebar({
     )
     : undefined;
 
-  const { photosCountHidden } = useAppState();
+  const { photosCountHidden = 0, userRole } = useAppState();
 
-  const tagsIncludingHidden = useMemo(() =>
-    addPrivateToTags(tags, photosCountHidden)
-  , [tags, photosCountHidden]);
+  const tagsIncludingHidden = useMemo(() => {
+    // Only show private tag for admin and private-viewer roles
+    const canSeePrivatePhotos =
+      userRole === 'admin' || userRole === 'private-viewer';
+    const hasPrivatePhotos = canSeePrivatePhotos && photosCountHidden > 0;
+    
+    return hasPrivatePhotos
+      ? addPrivateToTags(tags, photosCountHidden)
+      : tags;
+  }, [tags, photosCountHidden, userRole]);
 
   const recentsContent = recents.length > 0
     ? <HeaderList

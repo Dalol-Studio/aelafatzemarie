@@ -348,13 +348,18 @@ export default function CommandKClient({
   , [_years, queryLive]);
 
   const tags = useMemo(() => {
-    const tagsIncludingPrivate = photosCountHidden > 0
+    // Only show private tag for admin and private-viewer roles
+    const canSeePrivatePhotos =
+      userRole === 'admin' || userRole === 'private-viewer';
+    const hasPrivatePhotos = canSeePrivatePhotos && photosCountHidden > 0;
+    
+    const tagsIncludingPrivate = hasPrivatePhotos
       ? addPrivateToTags(_tags, photosCountHidden)
       : _tags;
     return HIDE_TAGS_WITH_ONE_PHOTO
       ? limitTagsByCount(tagsIncludingPrivate, 2, queryLive)
       : tagsIncludingPrivate;
-  }, [_tags, photosCountHidden, queryLive]);
+  }, [_tags, photosCountHidden, queryLive, userRole]);
 
   const categorySections: CommandKSection[] = useMemo(() =>
     CATEGORY_VISIBILITY
@@ -508,7 +513,7 @@ export default function CommandKClient({
     }],
   }];
 
-  if (isUserSignedIn && userRole === 'admin' && areAdminDebugToolsEnabled) {
+  if (isUserSignedIn && areAdminDebugToolsEnabled && userRole === 'admin') {
     clientSections.push({
       heading: 'Debug Tools',
       accessory: <RiToolsFill size={16} className="translate-x-[-1px]" />,
@@ -634,36 +639,32 @@ export default function CommandKClient({
         annotation: <IconLock narrow />,
         action: startUpload,
       });
-    }
-    if (uploadsCount && userRole === 'admin') {
-      adminSection.items.push({
-        label: `${appText.admin.uploadPlural} (${uploadsCount})`,
-        annotation: <IconLock narrow />,
-        path: PATH_ADMIN_UPLOADS,
-      });
-    }
-    if (userRole === 'admin') {
+      if (uploadsCount) {
+        adminSection.items.push({
+          label: `${appText.admin.uploadPlural} (${uploadsCount})`,
+          annotation: <IconLock narrow />,
+          path: PATH_ADMIN_UPLOADS,
+        });
+      }
       adminSection.items.push({
         label: `${appText.admin.managePhotos} (${photosCountTotal})`,
         annotation: <IconLock narrow />,
         path: PATH_ADMIN_PHOTOS,
       });
-    }
-    if (tagsCount && userRole === 'admin') {
-      adminSection.items.push({
-        label: `${appText.admin.manageTags} (${tagsCount})`,
-        annotation: <IconLock narrow />,
-        path: PATH_ADMIN_TAGS,
-      });
-    }
-    if (recipesCount && userRole === 'admin') {
-      adminSection.items.push({
-        label: `${appText.admin.manageRecipes} (${recipesCount})`,
-        annotation: <IconLock narrow />,
-        path: PATH_ADMIN_RECIPES,
-      });
-    }
-    if (userRole === 'admin') {
+      if (tagsCount) {
+        adminSection.items.push({
+          label: `${appText.admin.manageTags} (${tagsCount})`,
+          annotation: <IconLock narrow />,
+          path: PATH_ADMIN_TAGS,
+        });
+      }
+      if (recipesCount) {
+        adminSection.items.push({
+          label: `${appText.admin.manageRecipes} (${recipesCount})`,
+          annotation: <IconLock narrow />,
+          path: PATH_ADMIN_RECIPES,
+        });
+      }
       adminSection.items.push({
         label: isSelectingPhotos
           ? appText.admin.selectPhotosExit
@@ -692,17 +693,17 @@ export default function CommandKClient({
         annotation: <IconLock narrow />,
         path: PATH_ADMIN_CONFIGURATION,
       });
-    }
-    if (areAdminDebugToolsEnabled && userRole === 'admin') {
-      adminSection.items.push({
-        label: 'Baseline Overview',
-        annotation: <BiLockAlt />,
-        path: PATH_ADMIN_BASELINE,
-      }, {
-        label: 'Components Overview',
-        annotation: <BiLockAlt />,
-        path: PATH_ADMIN_COMPONENTS,
-      });
+      if (areAdminDebugToolsEnabled) {
+        adminSection.items.push({
+          label: 'Baseline Overview',
+          annotation: <BiLockAlt />,
+          path: PATH_ADMIN_BASELINE,
+        }, {
+          label: 'Components Overview',
+          annotation: <BiLockAlt />,
+          path: PATH_ADMIN_COMPONENTS,
+        });
+      }
     }
     adminSection.items.push({
       label: appText.auth.signOut,

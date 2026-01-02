@@ -1,6 +1,9 @@
 'use server';
 
-import { runAuthenticatedAdminServerAction } from '@/auth/server';
+import {
+  runAuthenticatedAdminServerAction,
+  runAuthenticatedSensitiveServerAction,
+} from '@/auth/server';
 import { testRedisConnection } from '@/platforms/redis';
 import { testOpenAiConnection } from '@/platforms/openai';
 import { testDatabaseConnection } from '@/platforms/postgres';
@@ -21,6 +24,17 @@ import {
 import { getAlbumsWithMetaCached } from '@/album/cache';
 
 export type AdminData = Awaited<ReturnType<typeof getAdminDataAction>>;
+
+export const getSensitiveDataAction = async () =>
+  runAuthenticatedSensitiveServerAction(async () => {
+    const photosCountHidden = await getPhotosMetaCached({ hidden: 'only' })
+      .then(({ count }) => count)
+      .catch(() => 0);
+
+    return {
+      photosCountHidden,
+    } as const;
+  });
 
 export const getAdminDataAction = async () =>
   runAuthenticatedAdminServerAction(async () => {

@@ -3,6 +3,7 @@
 import FieldsetWithStatus from '@/components/FieldsetWithStatus';
 import Container from '@/components/Container';
 import SubmitButtonWithStatus from '@/components/SubmitButtonWithStatus';
+import Spinner from '@/components/Spinner';
 import {
   useActionState,
   useEffect,
@@ -41,6 +42,7 @@ export default function SignInForm({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [response, action] = useActionState(signInAction, undefined);
+  const isRedirecting = response === KEY_CREDENTIALS_SUCCESS && shouldRedirect;
 
   const emailRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -51,8 +53,11 @@ export default function SignInForm({
   useEffect(() => {
     if (response === KEY_CREDENTIALS_SUCCESS) {
       setUserEmail?.(email);
+      if (shouldRedirect) {
+        window.location.href = params.get(KEY_CALLBACK_URL) || PATH_ROOT;
+      }
     }
-  }, [setUserEmail, response, email]);
+  }, [setUserEmail, response, email, shouldRedirect, params]);
 
   useEffect(() => {
     return () => {
@@ -86,51 +91,49 @@ export default function SignInForm({
             {appText.auth.signIn}
           </span>
         </h1>}
-      <form action={action} className="w-full">
-        <div className="space-y-6 w-full mt-2">
-          {response === KEY_CREDENTIALS_SIGN_IN_ERROR &&
-            <ErrorNote className="bg-red-500/20 border-red-500/50 text-red-200">
-              {appText.auth.invalidEmailPassword}
-            </ErrorNote>}
-          <div className="space-y-4 w-full">
-            <FieldsetWithStatus
-              id="email"
-              inputRef={emailRef}
-              label={appText.auth.email}
-              type="email"
-              value={email}
-              onChange={setEmail}
-              className="*:text-white/70 *:bg-white/5 *:border-white/10"
-            />
-            <FieldsetWithStatus
-              id="password"
-              label={appText.auth.password}
-              type="password"
-              value={password}
-              onChange={setPassword}
-              className="*:text-white/70 *:bg-white/5 *:border-white/10"
-            />
-            {shouldRedirect &&
-              <input
-                type="hidden"
-                name={KEY_CALLBACK_URL}
-                value={params.get(KEY_CALLBACK_URL) || PATH_ROOT}
-              />}
-          </div>
-          <SubmitButtonWithStatus 
-            disabled={!isFormValid}
-            className={clsx(
-              'w-full py-3 rounded-xl font-bold uppercase tracking-widest',
-              'bg-white text-black hover:bg-white/90',
-              'transform transition-all active:scale-[0.98]',
-              'disabled:opacity-30 disabled:cursor-not-allowed',
-              'disabled:active:scale-100',
-            )}
-          >
-            {appText.auth.signIn}
-          </SubmitButtonWithStatus>
+      {isRedirecting
+        ? <div className="flex justify-center items-center w-full min-h-[200px]">
+          <Spinner />
         </div>
-      </form>
+        : <form action={action} className="w-full">
+          <div className="space-y-6 w-full mt-2">
+            {response === KEY_CREDENTIALS_SIGN_IN_ERROR &&
+              <ErrorNote className="bg-red-500/20 border-red-500/50 text-red-200">
+                {appText.auth.invalidEmailPassword}
+              </ErrorNote>}
+            <div className="space-y-4 w-full">
+              <FieldsetWithStatus
+                id="email"
+                inputRef={emailRef}
+                label={appText.auth.email}
+                type="email"
+                value={email}
+                onChange={setEmail}
+                className="*:text-white/70 *:bg-white/5 *:border-white/10"
+              />
+              <FieldsetWithStatus
+                id="password"
+                label={appText.auth.password}
+                type="password"
+                value={password}
+                onChange={setPassword}
+                className="*:text-white/70 *:bg-white/5 *:border-white/10"
+              />
+            </div>
+            <SubmitButtonWithStatus
+              disabled={!isFormValid}
+              className={clsx(
+                'w-full py-3 rounded-xl font-bold uppercase tracking-widest',
+                'bg-white text-black hover:bg-white/90',
+                'transform transition-all active:scale-[0.98]',
+                'disabled:opacity-30 disabled:cursor-not-allowed',
+                'disabled:active:scale-100',
+              )}
+            >
+              {appText.auth.signIn}
+            </SubmitButtonWithStatus>
+          </div>
+        </form>}
     </Container>
   );
 }

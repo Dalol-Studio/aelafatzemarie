@@ -20,7 +20,11 @@ import {
 } from '@/app/config';
 import { ShareModalProps } from '@/share';
 import { storeTimezoneCookie } from '@/utility/timezone';
-import { AdminData, getAdminDataAction } from '@/admin/actions';
+import {
+  AdminData,
+  getAdminDataAction,
+  getSensitiveDataAction,
+} from '@/admin/actions';
 import {
   storeAuthEmailCookie,
   clearAuthEmailCookie,
@@ -172,9 +176,18 @@ export default function AppStateProvider({
     mutate: refreshAdminData,
     isLoading: isLoadingAdminData,
   } = useSWR(
-    isUserSignedIn ? SWR_KEYS.GET_ADMIN_DATA : null,
+    isUserSignedIn && userRole === 'admin' ? SWR_KEYS.GET_ADMIN_DATA : null,
     getAdminDataAction,
   );
+
+  // Fetch sensitive data for private-viewer users
+  const { data: sensitiveData } = useSWR(
+    isUserSignedIn && userRole === 'private-viewer'
+      ? SWR_KEYS.GET_SENSITIVE_DATA
+      : null,
+    getSensitiveDataAction,
+  );
+
   const updateAdminData = useCallback(
     (updatedData: Partial<AdminData>) => {
       if (adminData) {
@@ -262,6 +275,7 @@ export default function AppStateProvider({
         adminUpdateTimes,
         registerAdminUpdate,
         ...adminData,
+        ...sensitiveData,
         hasAdminData: Boolean(adminData),
         isLoadingAdminData,
         refreshAdminData,
