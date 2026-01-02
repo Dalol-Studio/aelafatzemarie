@@ -9,12 +9,15 @@ import type { Session } from 'next-auth';
 import { redirect } from 'next/navigation';
 import {
   generateAuthSecret,
+  KEY_AUTH_EMAIL,
   KEY_CALLBACK_URL,
   KEY_CREDENTIALS_CALLBACK_ROUTE_ERROR_URL,
   KEY_CREDENTIALS_SIGN_IN_ERROR,
   KEY_CREDENTIALS_SIGN_IN_ERROR_URL,
   KEY_CREDENTIALS_SUCCESS,
 } from '.';
+import { cookies } from 'next/headers';
+import { TIMEZONE_COOKIE_NAME } from '@/utility/timezone';
 
 export const signInAction = async (
   _prevState: string | undefined,
@@ -46,8 +49,12 @@ export const signInAction = async (
   return KEY_CREDENTIALS_SUCCESS;
 };
 
-export const signOutAction = async () =>
-  signOut({ redirect: false });
+export const signOutAction = async () => {
+  const cookieStore = await cookies();
+  cookieStore.delete(KEY_AUTH_EMAIL);
+  cookieStore.delete(TIMEZONE_COOKIE_NAME);
+  await signOut();
+};
 
 export const getAuthAction = async () => auth();
 

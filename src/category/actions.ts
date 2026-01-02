@@ -2,5 +2,12 @@
 
 import { getCountsForCategoriesCached } from './cache';
 
-export const getCountsForCategoriesCachedAction = async () =>
-  getCountsForCategoriesCached();
+import { auth } from '@/auth/server';
+
+export const getCountsForCategoriesCachedAction = async () => {
+  const session = await auth();
+  const role = (session?.user as any)?.role;
+  return getCountsForCategoriesCached(
+    role === 'admin' || role === 'private-viewer',
+  );
+};

@@ -6,12 +6,19 @@ import TagOverview from '@/tag/TagOverview';
 import { getPhotosTagDataCached } from '@/tag/data';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { cache } from 'react';
 import { staticallyGenerateCategoryIfConfigured } from '@/app/static';
 import { getAppText } from '@/i18n/state/server';
 
-const getPhotosTagDataCachedCached = cache((tag: string) =>
-  getPhotosTagDataCached({ tag, limit: INFINITE_SCROLL_GRID_INITIAL}));
+import { auth } from '@/auth/server';
+
+const getPhotosTagDataPreload = (tag: string, role?: string) =>
+  getPhotosTagDataCached({
+    tag,
+    limit: INFINITE_SCROLL_GRID_INITIAL,
+    hidden: (role === 'admin' || role === 'private-viewer')
+      ? 'include'
+      : 'exclude',
+  });
 
 export const generateStaticParams = staticallyGenerateCategoryIfConfigured(
   'tags',
@@ -31,10 +38,11 @@ export async function generateMetadata({
 
   const tag = decodeURIComponent(tagFromParams);
 
+  const session = await auth();
   const [
     photos,
     { count, dateRange },
-  ] = await getPhotosTagDataCachedCached(tag);
+  ] = await getPhotosTagDataPreload(tag, (session?.user as any)?.role);
 
   if (photos.length === 0) { return {}; }
 
@@ -71,10 +79,11 @@ export default async function TagPage({
 
   const tag = decodeURIComponent(tagFromParams);
 
+  const session = await auth();
   const [
     photos,
     { count, dateRange },
-  ] = await getPhotosTagDataCachedCached(tag);
+  ] = await getPhotosTagDataPreload(tag, (session?.user as any)?.role);
 
   if (photos.length === 0) { redirect(PATH_ROOT); }
 

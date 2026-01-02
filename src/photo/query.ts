@@ -263,95 +263,146 @@ export const getPhotosMostRecentUpdate = async () =>
   `.then(({ rows }) => rows[0] ? rows[0].updated_at as Date : undefined)
   , 'getPhotosMostRecentUpdate');
 
-export const getUniqueCameras = async () =>
-  safelyQuery(() => sql`
-    SELECT DISTINCT make||' '||model as camera, make, model,
-      COUNT(*),
-      MAX(updated_at) as last_modified
-    FROM photos
-    WHERE hidden IS NOT TRUE
-    AND trim(make) <> ''
-    AND trim(model) <> ''
-    GROUP BY make, model
-    ORDER BY camera ASC
-  `.then(({ rows }): Cameras => rows.map(({
-      make, model, count, last_modified,
-    }) => ({
-      cameraKey: createCameraKey({ make, model }),
-      camera: { make, model },
+export const getUniqueCameras = async (includeHidden?: boolean) =>
+  safelyQuery(() => (includeHidden
+    ? sql`
+      SELECT DISTINCT make||' '||model as camera, make, model,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE trim(make) <> ''
+      AND trim(model) <> ''
+      GROUP BY make, model
+      ORDER BY camera ASC
+    `
+    : sql`
+      SELECT DISTINCT make||' '||model as camera, make, model,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE hidden IS NOT TRUE
+      AND trim(make) <> ''
+      AND trim(model) <> ''
+      GROUP BY make, model
+      ORDER BY camera ASC
+    `).then(({ rows }): Cameras => rows.map(({
+    make, model, count, last_modified,
+  }) => ({
+    cameraKey: createCameraKey({ make, model }),
+    camera: { make, model },
+    count: parseInt(count, 10), 
+    lastModified: last_modified as Date,
+  })))
+  , 'getUniqueCameras');
+
+export const getUniqueLenses = async (includeHidden?: boolean) =>
+  safelyQuery(() => (includeHidden
+    ? sql`
+      SELECT DISTINCT lens_make||' '||lens_model as lens,
+        lens_make, lens_model,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE trim(lens_model) <> ''
+      GROUP BY lens_make, lens_model
+      ORDER BY lens ASC
+    `
+    : sql`
+      SELECT DISTINCT lens_make||' '||lens_model as lens,
+        lens_make, lens_model,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE hidden IS NOT TRUE
+      AND trim(lens_model) <> ''
+      GROUP BY lens_make, lens_model
+      ORDER BY lens ASC
+    `).then(({ rows }): Lenses => rows
+    .map(({ lens_make: make, lens_model: model, count, last_modified }) => ({
+      lensKey: createLensKey({ make, model }),
+      lens: { make, model },
       count: parseInt(count, 10), 
       lastModified: last_modified as Date,
     })))
-  , 'getUniqueCameras');
-
-export const getUniqueLenses = async () =>
-  safelyQuery(() => sql`
-    SELECT DISTINCT lens_make||' '||lens_model as lens,
-      lens_make, lens_model,
-      COUNT(*),
-      MAX(updated_at) as last_modified
-    FROM photos
-    WHERE hidden IS NOT TRUE
-    AND trim(lens_model) <> ''
-    GROUP BY lens_make, lens_model
-    ORDER BY lens ASC
-  `.then(({ rows }): Lenses => rows
-      .map(({ lens_make: make, lens_model: model, count, last_modified }) => ({
-        lensKey: createLensKey({ make, model }),
-        lens: { make, model },
-        count: parseInt(count, 10), 
-        lastModified: last_modified as Date,
-      })))
   , 'getUniqueLenses');
 
-export const getUniqueTags = async () =>
-  safelyQuery(() => sql`
-    SELECT DISTINCT unnest(tags) as tag,
-      COUNT(*),
-      MAX(updated_at) as last_modified
-    FROM photos
-    WHERE hidden IS NOT TRUE
-    GROUP BY tag
-    ORDER BY tag ASC
-  `.then(({ rows }): Tags => rows.map(({ tag, count, last_modified }) => ({
-      tag,
+export const getUniqueTags = async (includeHidden?: boolean) =>
+  safelyQuery(() => (includeHidden
+    ? sql`
+      SELECT DISTINCT unnest(tags) as tag,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      GROUP BY tag
+      ORDER BY tag ASC
+    `
+    : sql`
+      SELECT DISTINCT unnest(tags) as tag,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE hidden IS NOT TRUE
+      GROUP BY tag
+      ORDER BY tag ASC
+    `).then(({ rows }): Tags => rows.map(({ tag, count, last_modified }) => ({
+    tag,
+    count: parseInt(count, 10),
+    lastModified: last_modified as Date,
+  })))
+  , 'getUniqueTags');
+
+export const getUniqueRecipes = async (includeHidden?: boolean) =>
+  safelyQuery(() => (includeHidden
+    ? sql`
+      SELECT DISTINCT recipe_title,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE recipe_title IS NOT NULL
+      GROUP BY recipe_title
+      ORDER BY recipe_title ASC
+    `
+    : sql`
+      SELECT DISTINCT recipe_title,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE hidden IS NOT TRUE AND recipe_title IS NOT NULL
+      GROUP BY recipe_title
+      ORDER BY recipe_title ASC
+    `).then(({ rows }): Recipes => rows
+    .map(({ recipe_title, count, last_modified }) => ({
+      recipe: recipe_title,
       count: parseInt(count, 10),
       lastModified: last_modified as Date,
     })))
-  , 'getUniqueTags');
-
-export const getUniqueRecipes = async () =>
-  safelyQuery(() => sql`
-    SELECT DISTINCT recipe_title,
-      COUNT(*),
-      MAX(updated_at) as last_modified
-    FROM photos
-    WHERE hidden IS NOT TRUE AND recipe_title IS NOT NULL
-    GROUP BY recipe_title
-    ORDER BY recipe_title ASC
-  `.then(({ rows }): Recipes => rows
-      .map(({ recipe_title, count, last_modified }) => ({
-        recipe: recipe_title,
-        count: parseInt(count, 10),
-        lastModified: last_modified as Date,
-      })))
   , 'getUniqueRecipes');
 
-export const getUniqueYears = async () =>
-  safelyQuery(() => sql`
-    SELECT
-      DISTINCT EXTRACT(YEAR FROM taken_at) AS year,
-      COUNT(*),
-      MAX(updated_at) as last_modified
-    FROM photos
-    WHERE hidden IS NOT TRUE
-    GROUP BY year
-    ORDER BY year DESC
-  `.then(({ rows }): Years => rows.map(({ year, count, last_modified }) => ({
-      year,
-      count: parseInt(count, 10),
-      lastModified: last_modified as Date,
-    }))), 'getUniqueYears');
+export const getUniqueYears = async (includeHidden?: boolean) =>
+  safelyQuery(() => (includeHidden
+    ? sql`
+      SELECT
+        DISTINCT EXTRACT(YEAR FROM taken_at) AS year,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      GROUP BY year
+      ORDER BY year DESC
+    `
+    : sql`
+      SELECT
+        DISTINCT EXTRACT(YEAR FROM taken_at) AS year,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE hidden IS NOT TRUE
+      GROUP BY year
+      ORDER BY year DESC
+    `).then(({ rows }): Years => rows.map(({ year, count, last_modified }) => ({
+    year,
+    count: parseInt(count, 10),
+    lastModified: last_modified as Date,
+  }))), 'getUniqueYears');
 
 export const getRecipeTitleForData = async (
   data: string | object,
@@ -396,38 +447,58 @@ export const updateAllMatchingRecipeTitles = (
     AND film=${film}
   `, 'updateAllMatchingRecipeTitles');
 
-export const getUniqueFilms = async () =>
-  safelyQuery(() => sql`
-    SELECT DISTINCT film,
-      COUNT(*),
-      MAX(updated_at) as last_modified
-    FROM photos
-    WHERE hidden IS NOT TRUE AND film IS NOT NULL
-    GROUP BY film
-    ORDER BY film ASC
-  `.then(({ rows }): Films => rows
-      .map(({ film, count, last_modified }) => ({
-        film,
-        count: parseInt(count, 10),
-        lastModified: last_modified as Date,
-      })))
+export const getUniqueFilms = async (includeHidden?: boolean) =>
+  safelyQuery(() => (includeHidden
+    ? sql`
+      SELECT DISTINCT film,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE film IS NOT NULL
+      GROUP BY film
+      ORDER BY film ASC
+    `
+    : sql`
+      SELECT DISTINCT film,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE hidden IS NOT TRUE AND film IS NOT NULL
+      GROUP BY film
+      ORDER BY film ASC
+    `).then(({ rows }): Films => rows
+    .map(({ film, count, last_modified }) => ({
+      film,
+      count: parseInt(count, 10),
+      lastModified: last_modified as Date,
+    })))
   , 'getUniqueFilms');
 
-export const getUniqueFocalLengths = async () =>
-  safelyQuery(() => sql`
-    SELECT DISTINCT focal_length,
-      COUNT(*),
-      MAX(updated_at) as last_modified
-    FROM photos
-    WHERE hidden IS NOT TRUE AND focal_length IS NOT NULL
-    GROUP BY focal_length
-    ORDER BY focal_length ASC
-  `.then(({ rows }): FocalLengths => rows
-      .map(({ focal_length, count, last_modified }) => ({
-        focal: parseInt(focal_length, 10),
-        count: parseInt(count, 10),
-        lastModified: last_modified as Date,
-      })))
+export const getUniqueFocalLengths = async (includeHidden?: boolean) =>
+  safelyQuery(() => (includeHidden
+    ? sql`
+      SELECT DISTINCT focal_length,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE focal_length IS NOT NULL
+      GROUP BY focal_length
+      ORDER BY focal_length ASC
+    `
+    : sql`
+      SELECT DISTINCT focal_length,
+        COUNT(*),
+        MAX(updated_at) as last_modified
+      FROM photos
+      WHERE hidden IS NOT TRUE AND focal_length IS NOT NULL
+      GROUP BY focal_length
+      ORDER BY focal_length ASC
+    `).then(({ rows }): FocalLengths => rows
+    .map(({ focal_length, count, last_modified }) => ({
+      focal: parseInt(focal_length, 10),
+      count: parseInt(count, 10),
+      lastModified: last_modified as Date,
+    })))
   , 'getUniqueFocalLengths');
 
 export const getPhotos = async (options: PhotoQueryOptions = {}) =>

@@ -103,7 +103,7 @@ export const cloudflareR2List = async (
 
 export const cloudflareR2Delete = async (Key: string) => {
   const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
-  (await cloudflareR2Client()).send(new DeleteObjectCommand({
+  await (await cloudflareR2Client()).send(new DeleteObjectCommand({
     Bucket: CLOUDFLARE_R2_BUCKET,
     Key,
   }));

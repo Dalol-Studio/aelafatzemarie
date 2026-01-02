@@ -49,7 +49,11 @@ import {
 } from './server';
 import { TAG_FAVS, Tags, isPhotoFav, isTagFavs } from '@/tag';
 import { convertPhotoToPhotoDbInsert, Photo } from '.';
-import { runAuthenticatedAdminServerAction } from '@/auth/server';
+import {
+  auth,
+  runAuthenticatedAdminServerAction,
+  runAuthenticatedSensitiveServerAction,
+} from '@/auth/server';
 import { AiImageQuery, getAiImageQuery, getAiTextFieldsToGenerate } from './ai';
 import { streamOpenAiImageQuery } from '@/platforms/openai';
 import {
@@ -806,7 +810,7 @@ export const getPhotosAction = async (
     return [];
   } else {
     return areOptionsSensitive(options)
-      ? runAuthenticatedAdminServerAction(() => getPhotos(options))
+      ? runAuthenticatedSensitiveServerAction(() => getPhotos(options))
       : getPhotos(options);
   }
 };
@@ -819,16 +823,24 @@ export const getPhotosCachedAction = async (
     return [];
   } else {
     return areOptionsSensitive(options)
-      ? runAuthenticatedAdminServerAction(() => getPhotosCached(options))
+      ? runAuthenticatedSensitiveServerAction(() => getPhotosCached(options))
       : getPhotosCached(options);
   }
 };
 
 // Public actions
 
-export const searchPhotosAction = async (query: string) =>
-  getPhotos({ query, limit: 10 })
+export const searchPhotosAction = async (query: string) => {
+  const session = await auth();
+  const role = (session?.user as any)?.role;
+  const isSensitive = role === 'admin' || role === 'private-viewer';
+  return getPhotos({
+    query,
+    limit: 10,
+    hidden: isSensitive ? 'include' : 'exclude',
+  })
     .catch(e => {
       console.error('Could not query photos', e);
       return [] as Photo[];
     });
+};

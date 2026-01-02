@@ -41,10 +41,12 @@ export type AppStateContextType = {
   setRecipeModalProps?: Dispatch<SetStateAction<RecipeProps | undefined>>
   // AUTH
   userEmail?: string
+  userRole?: string
   userEmailEager?: string
   setUserEmail?: Dispatch<SetStateAction<string | undefined>>
   isUserSignedIn?: boolean
   isUserSignedInEager?: boolean
+  isUserAdmin?: boolean
   clearAuthStateAndRedirectIfNecessary?: () => void
   // ADMIN
   isCheckingAuth?: boolean

@@ -157,6 +157,7 @@ export default function CommandKClient({
 
   const {
     isUserSignedIn,
+    userRole,
     clearAuthStateAndRedirectIfNecessary,
     isCommandKOpen: isOpen,
     startUpload,
@@ -347,13 +348,18 @@ export default function CommandKClient({
   , [_years, queryLive]);
 
   const tags = useMemo(() => {
-    const tagsIncludingPrivate = photosCountHidden > 0
+    // Only show private tag for admin and private-viewer roles
+    const canSeePrivatePhotos =
+      userRole === 'admin' || userRole === 'private-viewer';
+    const hasPrivatePhotos = canSeePrivatePhotos && photosCountHidden > 0;
+    
+    const tagsIncludingPrivate = hasPrivatePhotos
       ? addPrivateToTags(_tags, photosCountHidden)
       : _tags;
     return HIDE_TAGS_WITH_ONE_PHOTO
       ? limitTagsByCount(tagsIncludingPrivate, 2, queryLive)
       : tagsIncludingPrivate;
-  }, [_tags, photosCountHidden, queryLive]);
+  }, [_tags, photosCountHidden, queryLive, userRole]);
 
   const categorySections: CommandKSection[] = useMemo(() =>
     CATEGORY_VISIBILITY
@@ -507,7 +513,7 @@ export default function CommandKClient({
     }],
   }];
 
-  if (isUserSignedIn && areAdminDebugToolsEnabled) {
+  if (isUserSignedIn && areAdminDebugToolsEnabled && userRole === 'admin') {
     clientSections.push({
       heading: 'Debug Tools',
       accessory: <RiToolsFill size={16} className="translate-x-[-1px]" />,
@@ -627,75 +633,77 @@ export default function CommandKClient({
   };
 
   if (isUserSignedIn) {
-    adminSection.items.push({
-      label: appText.admin.uploadPhotos,
-      annotation: <IconLock narrow />,
-      action: startUpload,
-    });
-    if (uploadsCount) {
+    if (userRole === 'admin') {
       adminSection.items.push({
-        label: `${appText.admin.uploadPlural} (${uploadsCount})`,
+        label: appText.admin.uploadPhotos,
         annotation: <IconLock narrow />,
-        path: PATH_ADMIN_UPLOADS,
+        action: startUpload,
       });
-    }
-    adminSection.items.push({
-      label: `${appText.admin.managePhotos} (${photosCountTotal})`,
-      annotation: <IconLock narrow />,
-      path: PATH_ADMIN_PHOTOS,
-    });
-    if (tagsCount) {
+      if (uploadsCount) {
+        adminSection.items.push({
+          label: `${appText.admin.uploadPlural} (${uploadsCount})`,
+          annotation: <IconLock narrow />,
+          path: PATH_ADMIN_UPLOADS,
+        });
+      }
       adminSection.items.push({
-        label: `${appText.admin.manageTags} (${tagsCount})`,
+        label: `${appText.admin.managePhotos} (${photosCountTotal})`,
         annotation: <IconLock narrow />,
-        path: PATH_ADMIN_TAGS,
+        path: PATH_ADMIN_PHOTOS,
       });
-    }
-    if (recipesCount) {
+      if (tagsCount) {
+        adminSection.items.push({
+          label: `${appText.admin.manageTags} (${tagsCount})`,
+          annotation: <IconLock narrow />,
+          path: PATH_ADMIN_TAGS,
+        });
+      }
+      if (recipesCount) {
+        adminSection.items.push({
+          label: `${appText.admin.manageRecipes} (${recipesCount})`,
+          annotation: <IconLock narrow />,
+          path: PATH_ADMIN_RECIPES,
+        });
+      }
       adminSection.items.push({
-        label: `${appText.admin.manageRecipes} (${recipesCount})`,
+        label: isSelectingPhotos
+          ? appText.admin.selectPhotosExit
+          : appText.admin.selectPhotos,
         annotation: <IconLock narrow />,
-        path: PATH_ADMIN_RECIPES,
-      });
-    }
-    adminSection.items.push({
-      label: isSelectingPhotos
-        ? appText.admin.selectPhotosExit
-        : appText.admin.selectPhotos,
-      annotation: <IconLock narrow />,
-      // Search by legacy label
-      keywords: ['batch', 'edit'],
-      action: () => {
-        if (!isSelectingPhotos) {
-          startSelectingPhotos?.();
-        } else {
-          stopSelectingPhotos?.();
-        }
-      },
-    }, {
-      label: <span className="flex items-center gap-3">
-        {appText.admin.appInsights}
-        {insightsIndicatorStatus &&
-          <InsightsIndicatorDot />}
-      </span>,
-      keywords: ['app insights'],
-      annotation: <IconLock narrow />,
-      path: PATH_ADMIN_INSIGHTS,
-    }, {
-      label: appText.admin.appConfig,
-      annotation: <IconLock narrow />,
-      path: PATH_ADMIN_CONFIGURATION,
-    });
-    if (areAdminDebugToolsEnabled) {
-      adminSection.items.push({
-        label: 'Baseline Overview',
-        annotation: <BiLockAlt />,
-        path: PATH_ADMIN_BASELINE,
+        // Search by legacy label
+        keywords: ['batch', 'edit'],
+        action: () => {
+          if (!isSelectingPhotos) {
+            startSelectingPhotos?.();
+          } else {
+            stopSelectingPhotos?.();
+          }
+        },
       }, {
-        label: 'Components Overview',
-        annotation: <BiLockAlt />,
-        path: PATH_ADMIN_COMPONENTS,
+        label: <span className="flex items-center gap-3">
+          {appText.admin.appInsights}
+          {insightsIndicatorStatus &&
+            <InsightsIndicatorDot />}
+        </span>,
+        keywords: ['app insights'],
+        annotation: <IconLock narrow />,
+        path: PATH_ADMIN_INSIGHTS,
+      }, {
+        label: appText.admin.appConfig,
+        annotation: <IconLock narrow />,
+        path: PATH_ADMIN_CONFIGURATION,
       });
+      if (areAdminDebugToolsEnabled) {
+        adminSection.items.push({
+          label: 'Baseline Overview',
+          annotation: <BiLockAlt />,
+          path: PATH_ADMIN_BASELINE,
+        }, {
+          label: 'Components Overview',
+          annotation: <BiLockAlt />,
+          path: PATH_ADMIN_COMPONENTS,
+        });
+      }
     }
     adminSection.items.push({
       label: appText.auth.signOut,

@@ -91,6 +91,9 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
+  experimental: {
+    cpus: 4,
+  },
 };
 
 module.exports = process.env.ANALYZE === 'true'

@@ -2,7 +2,6 @@ import { INFINITE_SCROLL_GRID_INITIAL } from '@/photo';
 import { PATH_ROOT } from '@/app/path';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { cache } from 'react';
 import { staticallyGenerateCategoryIfConfigured } from '@/app/static';
 import { getAppText } from '@/i18n/state/server';
 import AlbumOverview from '@/album/AlbumOverview';
@@ -15,8 +14,16 @@ import {
 } from '@/album/cache';
 import { getPhotosCached } from '@/photo/cache';
 
-const getPhotosAlbumDataCachedCached = cache((album: Album) =>
-  getPhotosAlbumDataCached({ album, limit: INFINITE_SCROLL_GRID_INITIAL}));
+import { auth } from '@/auth/server';
+
+const getPhotosAlbumDataPreload = (album: Album, role?: string) =>
+  getPhotosAlbumDataCached({
+    album,
+    limit: INFINITE_SCROLL_GRID_INITIAL,
+    hidden: (role === 'admin' || role === 'private-viewer')
+      ? 'include'
+      : 'exclude',
+  });
 
 export const generateStaticParams = staticallyGenerateCategoryIfConfigured(
   'albums',
@@ -40,10 +47,12 @@ export async function generateMetadata({
 
   if (!album) { return {}; }
 
+  const session = await auth();
+  const role = (session?.user as any)?.role;
   const [
     photos,
     { count, dateRange },
-  ] = await getPhotosAlbumDataCachedCached(album);
+  ] = await getPhotosAlbumDataPreload(album, role);
 
   if (photos.length === 0) { return {}; }
 
@@ -84,7 +93,14 @@ export default async function AlbumPage({
 
   if (!album) { redirect(PATH_ROOT); }
 
-  const photos = await getPhotosCached({ album });
+  const session = await auth();
+  const role = (session?.user as any)?.role;
+  const isSensitive = role === 'admin' || role === 'private-viewer';
+
+  const photos = await getPhotosCached({
+    album,
+    hidden: isSensitive ? 'include' : 'exclude',
+  });
 
   const tags = await getTagsForAlbumCached(album.id);
 

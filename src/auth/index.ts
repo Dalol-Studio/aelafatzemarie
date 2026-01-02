@@ -8,7 +8,7 @@ export const KEY_CREDENTIALS_CALLBACK_ROUTE_ERROR_URL =
 export const KEY_CREDENTIALS_SUCCESS = 'success';
 export const KEY_CALLBACK_URL = 'callbackUrl';
 
-const KEY_AUTH_EMAIL = 'authjs.email';
+export const KEY_AUTH_EMAIL = 'authjs.email';
 
 export const storeAuthEmailCookie = (email: string) =>
   storeCookie(KEY_AUTH_EMAIL, email);
