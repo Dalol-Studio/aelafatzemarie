@@ -40,18 +40,5 @@ export function proxy(req: NextRequest, res:NextResponse) {
 }
 
 export const config = {
-  // Excludes:
-  // - /api + /api/auth*
-  // - /_next/static*
-  // - /_next/image*
-  // - /favicon.ico + /favicons/*
-  // - /grid
-  // - /full
-  // - / (root)
-  // - /home-image
-  // - /template-image
-  // - /template-image-tight
-  // - /template-url
-  // eslint-disable-next-line max-len
-  matcher: ['/((?!api$|api/auth|_next/static|_next/image|favicon.ico$|favicons/|grid$|full$|home-image$|template-image$|template-image-tight$|template-url$|$).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*$).*)'],
 };

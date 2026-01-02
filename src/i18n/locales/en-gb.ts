@@ -106,7 +106,7 @@ export const TEXT: I18N = {
   auth: {
     signIn: 'Sign In',
     signOut: 'Sign Out',
-    email: 'Admin Email',
+    email: 'Email',
     password: 'Admin Password',
     invalidEmailPassword: 'Invalid email/password',
   },

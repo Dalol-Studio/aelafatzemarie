@@ -10,6 +10,7 @@ import {
   PATH_ADMIN_TAGS,
   PATH_ADMIN_UPLOADS,
 } from '@/app/path';
+import { TAG_PRIVATE } from '@/tag';
 import { useAppState } from '@/app/AppState';
 import { IoArrowDown, IoArrowUp } from 'react-icons/io5';
 import { clsx } from 'clsx/lite';
@@ -55,7 +56,11 @@ export default function AdminAppMenu({
     startUpload,
     refreshAdminData,
     clearAuthStateAndRedirectIfNecessary,
+    userRole,
   } = useAppState();
+
+  const isAdmin = userRole === 'admin';
+  const isPrivateViewer = userRole === 'private-viewer';
 
   const {
     isSelectingPhotos,
@@ -83,130 +88,143 @@ export default function AdminAppMenu({
   const sectionMain: MoreMenuSection = useMemo(() => {
     const items: ComponentProps<typeof MoreMenuItem>[] = [];
 
-    if (uploadsCount) {
+    if (isAdmin) {
+      if (uploadsCount) {
+        items.push({
+          label: appText.admin.uploadPlural,
+          annotation: `${uploadsCount}`,
+          icon: <IconFolder
+            size={15}
+            className="translate-x-[0.5px] translate-y-[0.5px]"
+          />,
+          href: PATH_ADMIN_UPLOADS,
+        });
+      }
+      if (photosCountNeedSync) {
+        items.push({
+          label: appText.admin.updatePlural,
+          annotation: <>
+            <span className="mr-3 text-blue-500">
+              {photosCountNeedSync}
+            </span>
+            <InsightsIndicatorDot
+              className="inline-block translate-y-[-1px]"
+              colorOverride="blue"
+              size="small"
+            />
+          </>,
+          icon: <IconBroom
+            size={18}
+            className="translate-y-[-0.5px]"
+          />,
+          href: PATH_ADMIN_PHOTOS_UPDATES,
+        });
+      }
+      if (photosCountTotal) {
+        items.push({
+          label: appText.admin.managePhotos,
+          ...photosCountTotal && {
+            annotation: `${photosCountTotal}`,
+          },
+          icon: <IconPhoto
+            size={15}
+            className="translate-x-[-0.5px] translate-y-[0.5px]"
+          />,
+          href: PATH_ADMIN_PHOTOS,
+        });
+      }
+      if (albumsCount) {
+        items.push({
+          label: appText.admin.manageAlbums,
+          annotation: `${albumsCount}`,
+          icon: <IconAlbum
+            size={15}
+            className="translate-x-[-0.5px] translate-y-[0.5px]"
+          />,
+          href: PATH_ADMIN_ALBUMS,
+        });
+      }
+      if (tagsCount) {
+        items.push({
+          label: appText.admin.manageTags,
+          annotation: `${tagsCount}`,
+          icon: <IconTag
+            size={15}
+            className="translate-y-[1.5px]"
+          />,
+          href: PATH_ADMIN_TAGS,
+        });
+      }
+      if (recipesCount) {
+        items.push({
+          label: appText.admin.manageRecipes,
+          annotation: `${recipesCount}`,
+          icon: <IconRecipe
+            size={17}
+            className="translate-x-[-0.5px]"
+          />,
+          href: PATH_ADMIN_RECIPES,
+        });
+      }
+      if (photosCountTotal) {
+        items.push({
+          label: isSelectingPhotos
+            ? appText.admin.selectPhotosExit
+            : appText.admin.selectPhotos,
+          icon: isSelectingPhotos
+            ? <FiXSquare
+              size={15}
+              className="translate-x-[-0.75px] translate-y-[0.5px]"
+            />
+            : <IoMdCheckboxOutline
+              size={16}
+              className="translate-x-[-0.5px] translate-y-[0.5px]"
+            />,
+          action: isSelectingPhotos
+            ? stopSelectingPhotos
+            : startSelectingPhotos,
+        });
+      }
+
       items.push({
-        label: appText.admin.uploadPlural,
-        annotation: `${uploadsCount}`,
-        icon: <IconFolder
-          size={15}
-          className="translate-x-[0.5px] translate-y-[0.5px]"
-        />,
-        href: PATH_ADMIN_UPLOADS,
-      });
-    }
-    if (photosCountNeedSync) {
-      items.push({
-        label: appText.admin.updatePlural,
-        annotation: <>
-          <span className="mr-3 text-blue-500">
-            {photosCountNeedSync}
-          </span>
-          <InsightsIndicatorDot
-            className="inline-block translate-y-[-1px]"
-            colorOverride="blue"
-            size="small"
-          />
-        </>,
-        icon: <IconBroom
-          size={18}
-          className="translate-y-[-0.5px]"
-        />,
-        href: PATH_ADMIN_PHOTOS_UPDATES,
-      });
-    }
-    if (photosCountTotal) {
-      items.push({
-        label: appText.admin.managePhotos,
-        ...photosCountTotal && {
-          annotation: `${photosCountTotal}`,
+        label: 'Backup Database',
+        icon: <IconGrSync className="translate-y-[0.5px]" />,
+        action: () => {
+          if (confirm('Backup database to local storage?')) {
+            backupDatabaseAction()
+              .then(() => alert('Backup completed'))
+              .catch((e) => alert(`Backup failed: ${e}`));
+          }
         },
-        icon: <IconPhoto
-          size={15}
-          className="translate-x-[-0.5px] translate-y-[0.5px]"
-        />,
-        href: PATH_ADMIN_PHOTOS,
       });
-    }
-    if (albumsCount) {
+
       items.push({
-        label: appText.admin.manageAlbums,
-        annotation: `${albumsCount}`,
-        icon: <IconAlbum
-          size={15}
-          className="translate-x-[-0.5px] translate-y-[0.5px]"
+        label: showAppInsightsLink
+          ? appText.admin.appInsights
+          : appText.admin.appConfig,
+        icon: <AdminAppInfoIcon
+          size="small"
+          className="translate-x-[-0.5px]"
         />,
-        href: PATH_ADMIN_ALBUMS,
+        href: showAppInsightsLink
+          ? PATH_ADMIN_INSIGHTS
+          : PATH_ADMIN_CONFIGURATION,
       });
-    }
-    if (tagsCount) {
+    } else if (isPrivateViewer) {
       items.push({
-        label: appText.admin.manageTags,
-        annotation: `${tagsCount}`,
+        label: 'Protected Photos',
         icon: <IconTag
           size={15}
           className="translate-y-[1.5px]"
         />,
-        href: PATH_ADMIN_TAGS,
+        href: `/tag/${TAG_PRIVATE}`,
       });
     }
-    if (recipesCount) {
-      items.push({
-        label: appText.admin.manageRecipes,
-        annotation: `${recipesCount}`,
-        icon: <IconRecipe
-          size={17}
-          className="translate-x-[-0.5px]"
-        />,
-        href: PATH_ADMIN_RECIPES,
-      });
-    }
-    if (photosCountTotal) {
-      items.push({
-        label: isSelectingPhotos
-          ? appText.admin.selectPhotosExit
-          : appText.admin.selectPhotos,
-        icon: isSelectingPhotos
-          ? <FiXSquare
-            size={15}
-            className="translate-x-[-0.75px] translate-y-[0.5px]"
-          />
-          : <IoMdCheckboxOutline
-            size={16}
-            className="translate-x-[-0.5px] translate-y-[0.5px]"
-          />,
-        action: isSelectingPhotos
-          ? stopSelectingPhotos
-          : startSelectingPhotos,
-      });
-    }
-
-    items.push({
-      label: 'Backup Database',
-      icon: <IconGrSync className="translate-y-[0.5px]" />,
-      action: () => {
-        if (confirm('Backup database to local storage?')) {
-          backupDatabaseAction()
-            .then(() => alert('Backup completed'))
-            .catch((e) => alert(`Backup failed: ${e}`));
-        }
-      },
-    });
-
-    items.push({
-      label: showAppInsightsLink
-        ? appText.admin.appInsights
-        : appText.admin.appConfig,
-      icon: <AdminAppInfoIcon
-        size="small"
-        className="translate-x-[-0.5px]"
-      />,
-      href: showAppInsightsLink
-        ? PATH_ADMIN_INSIGHTS
-        : PATH_ADMIN_CONFIGURATION,
-    });
 
     return { items };
   }, [
+    isAdmin,
+    isPrivateViewer,
     appText,
     isSelectingPhotos,
     startSelectingPhotos,
@@ -228,9 +246,11 @@ export default function AdminAppMenu({
     }],
   }), [appText.auth.signOut, clearAuthStateAndRedirectIfNecessary]);
 
-  const sections = useMemo(() =>
-    [sectionUpload, sectionMain, sectionSignOut]
-  , [sectionUpload, sectionMain, sectionSignOut]);
+  const sections = useMemo(() => [
+    ...isAdmin ? [sectionUpload] : [],
+    sectionMain,
+    sectionSignOut,
+  ], [isAdmin, sectionUpload, sectionMain, sectionSignOut]);
 
   return (
     <SwitcherItemMenu

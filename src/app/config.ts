@@ -374,6 +374,8 @@ export const GEO_PRIVACY_ENABLED =
   process.env.NEXT_PUBLIC_GEO_PRIVACY === '1';
 export const ALLOW_PUBLIC_DOWNLOADS =
   process.env.NEXT_PUBLIC_ALLOW_PUBLIC_DOWNLOADS === '1';
+export const REQUIRE_LOGIN =
+  process.env.NEXT_PUBLIC_REQUIRE_LOGIN === '1';
 export const SOCIAL_NETWORKS = parseSocialKeysFromString(
   // Legacy environment variable
   process.env.NEXT_PUBLIC_HIDE_SOCIAL === '1'
@@ -429,6 +431,14 @@ export const APP_CONFIGURATION = {
   hasAdminUser: (
     Boolean(process.env.ADMIN_EMAIL) &&
     Boolean(process.env.ADMIN_PASSWORD)
+  ),
+  hasVisitorPrivateUser: (
+    Boolean(process.env.VISITOR_PRIVATE_EMAIL) &&
+    Boolean(process.env.VISITOR_PRIVATE_PASSWORD)
+  ),
+  hasVisitorPublicUser: (
+    Boolean(process.env.VISITOR_PUBLIC_EMAIL) &&
+    Boolean(process.env.VISITOR_PUBLIC_PASSWORD)
   ),
   // Content
   locale: APP_LOCALE,

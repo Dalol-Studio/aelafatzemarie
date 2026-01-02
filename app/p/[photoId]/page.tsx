@@ -12,28 +12,32 @@ import {
 } from '@/app/path';
 import PhotoDetailPage from '@/photo/PhotoDetailPage';
 import { getPhotoCached, getPhotosNearIdCached } from '@/photo/cache';
-import { cache } from 'react';
+import { auth } from '@/auth/server';
 import { staticallyGeneratePhotosIfConfigured } from '@/app/static';
 
 export const maxDuration = 60;
 
-const getPhotosNearIdCachedCached = cache(async (photoId: string) => {
-  const photo = await getPhotoCached(photoId);
-  // Omit related photos when photo is excluded from feeds
-  return photo?.excludeFromFeeds
+const getPhotosPreload = async (photoId: string, role?: string) => {
+  const isSensitive = role === 'admin' || role === 'private-viewer';
+  const photo = await getPhotoCached(photoId, isSensitive);
+  const photoData = photo?.excludeFromFeeds
     ? {
-      photo: photo,
       photos: [],
       photosGrid: [],
       indexNumber: 0,
     }
-    :getPhotosNearIdCached(
+    : await getPhotosNearIdCached(
       photoId, {
         limit: RELATED_GRID_PHOTOS_TO_SHOW + 2,
         excludeFromFeeds: true,
+        hidden: isSensitive ? 'include' : 'exclude',
       },
     );
-});
+  return {
+    photo,
+    ...photoData,
+  };
+};
 
 export const generateStaticParams = staticallyGeneratePhotosIfConfigured(
   'page',
@@ -47,7 +51,8 @@ export async function generateMetadata({
   params,
 }:PhotoProps): Promise<Metadata> {
   const { photoId } = await params;
-  const { photo } = await getPhotosNearIdCachedCached(photoId);
+  const session = await auth();
+  const { photo } = await getPhotosPreload(photoId, (session?.user as any)?.role);
 
   if (!photo) { return {}; }
 
@@ -79,8 +84,9 @@ export default async function PhotoPage({
   params,
 }: PhotoProps) {
   const { photoId } = await params;
+  const session = await auth();
   const { photo, photos, photosGrid } =
-    await getPhotosNearIdCachedCached(photoId);
+    await getPhotosPreload(photoId, (session?.user as any)?.role);
 
   if (!photo) { redirect(PATH_ROOT); }
 

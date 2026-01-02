@@ -163,10 +163,11 @@ export const getPhotosNearIdCached = (
   };
 });
 
-export const getPhotosMetaCached = unstable_cache(
-  getPhotosMeta,
-  [KEY_PHOTOS, KEY_COUNT, KEY_DATE_RANGE],
-);
+export const getPhotosMetaCached = (options: PhotoQueryOptions = {}) =>
+  unstable_cache(
+    getPhotosMeta,
+    [KEY_PHOTOS, KEY_COUNT, KEY_DATE_RANGE, ...getPhotosCacheKeys(options)],
+  )(options);
 
 export const getPhotosMostRecentUpdateCached =
   unstable_cache(
@@ -186,47 +187,47 @@ export const getPhotosInNeedOfUpdateCountCached =
     [KEY_PHOTOS, KEY_COUNT],
   );
   
-export const getUniqueTagsCached =
+export const getUniqueTagsCached = (includeHidden?: boolean) =>
   unstable_cache(
     getUniqueTags,
-    [KEY_PHOTOS, KEY_TAGS],
-  );
+    [KEY_PHOTOS, KEY_TAGS, includeHidden ? 'hidden' : 'public'],
+  )(includeHidden);
 
-export const getUniqueCamerasCached =
+export const getUniqueCamerasCached = (includeHidden?: boolean) =>
   unstable_cache(
     getUniqueCameras,
-    [KEY_PHOTOS, KEY_CAMERAS],
-  );
+    [KEY_PHOTOS, KEY_CAMERAS, includeHidden ? 'hidden' : 'public'],
+  )(includeHidden);
 
-export const getUniqueLensesCached =
+export const getUniqueLensesCached = (includeHidden?: boolean) =>
   unstable_cache(
     getUniqueLenses,
-    [KEY_PHOTOS, KEY_LENSES],
-  );
+    [KEY_PHOTOS, KEY_LENSES, includeHidden ? 'hidden' : 'public'],
+  )(includeHidden);
 
-export const getUniqueFilmsCached =
+export const getUniqueFilmsCached = (includeHidden?: boolean) =>
   unstable_cache(
     getUniqueFilms,
-    [KEY_PHOTOS, KEY_FILMS],
-  );
+    [KEY_PHOTOS, KEY_FILMS, includeHidden ? 'hidden' : 'public'],
+  )(includeHidden);
 
-export const getUniqueRecipesCached =
+export const getUniqueRecipesCached = (includeHidden?: boolean) =>
   unstable_cache(
     getUniqueRecipes,
-    [KEY_PHOTOS, KEY_RECIPES],
-  );
+    [KEY_PHOTOS, KEY_RECIPES, includeHidden ? 'hidden' : 'public'],
+  )(includeHidden);
 
-export const getUniqueFocalLengthsCached =
+export const getUniqueFocalLengthsCached = (includeHidden?: boolean) =>
   unstable_cache(
     getUniqueFocalLengths,
-    [KEY_PHOTOS, KEY_FOCAL_LENGTHS],
-  );
+    [KEY_PHOTOS, KEY_FOCAL_LENGTHS, includeHidden ? 'hidden' : 'public'],
+  )(includeHidden);
 
-export const getUniqueYearsCached =
+export const getUniqueYearsCached = (includeHidden?: boolean) =>
   unstable_cache(
     getUniqueYears,
-    [KEY_PHOTOS, KEY_YEARS],
-  );
+    [KEY_PHOTOS, KEY_YEARS, includeHidden ? 'hidden' : 'public'],
+  )(includeHidden);
 
 // No store
 

@@ -17,14 +17,17 @@ export const getFeedQueryOptions = ({
   isGrid,
   sortBy = USER_DEFAULT_SORT_OPTIONS.sortBy,
   sortWithPriority = USER_DEFAULT_SORT_OPTIONS.sortWithPriority,
+  hidden = 'exclude',
 }: {
   isGrid: boolean,
   sortBy?: SortBy,
   sortWithPriority?: boolean,
+  hidden?: 'exclude' | 'include' | 'only',
 }): PhotoQueryOptions => ({
   ...FEED_BASE_QUERY_OPTIONS,
   sortBy,
   sortWithPriority,
+  hidden,
   limit: isGrid
     ? INFINITE_SCROLL_GRID_INITIAL
     : INFINITE_SCROLL_FULL_INITIAL,

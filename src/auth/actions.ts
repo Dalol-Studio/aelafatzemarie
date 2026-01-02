@@ -47,7 +47,7 @@ export const signInAction = async (
 };
 
 export const signOutAction = async () =>
-  signOut({ redirect: false });
+  signOut();
 
 export const getAuthAction = async () => auth();
 

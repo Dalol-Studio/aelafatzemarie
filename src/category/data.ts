@@ -39,9 +39,9 @@ export const NULL_CATEGORY_DATA: CategoryData = {
   albums: [],
 };
 
-export const getDataForCategories = () => Promise.all([
+export const getDataForCategories = (includeHidden?: boolean) => Promise.all([
   SHOW_RECENTS
-    ? getPhotosMetaCached({ recent: true })
+    ? getPhotosMetaCached({ recent: true, hidden: includeHidden ? 'include' : 'exclude' })
       .then(({ count, dateRange }) => count && dateRange
         ? [{
           count,
@@ -50,41 +50,41 @@ export const getDataForCategories = () => Promise.all([
       .catch(() => [])
     : undefined,
   SHOW_YEARS
-    ? getUniqueYearsCached()
+    ? getUniqueYearsCached(includeHidden)
       .catch(() => [])
     : undefined,
   SHOW_CAMERAS
-    ? getUniqueCamerasCached()
+    ? getUniqueCamerasCached(includeHidden)
       .then(sortCategoriesByCount)
       .catch(() => [])
     : undefined,
   SHOW_LENSES
-    ? getUniqueLensesCached()
+    ? getUniqueLensesCached(includeHidden)
       .then(sortCategoriesByCount)
       .catch(() => [])
     : undefined,
   SHOW_TAGS
-    ? getUniqueTagsCached()
+    ? getUniqueTagsCached(includeHidden)
       .then(sortTagsByCount)
       .catch(() => [])
     : undefined,
   SHOW_RECIPES
-    ? getUniqueRecipesCached()
+    ? getUniqueRecipesCached(includeHidden)
       .then(sortCategoriesByCount)
       .catch(() => [])
     : undefined,
   SHOW_FILMS
-    ? getUniqueFilmsCached()
+    ? getUniqueFilmsCached(includeHidden)
       .then(sortCategoriesByCount)
       .catch(() => [])
     : undefined,
   SHOW_FOCAL_LENGTHS
-    ? getUniqueFocalLengthsCached()
+    ? getUniqueFocalLengthsCached(includeHidden)
       .then(sortFocalLengths)
       .catch(() => [])
     : undefined,
   SHOW_ALBUMS
-    ? getAlbumsWithMetaCached()
+    ? getAlbumsWithMetaCached() // Albums might need role check too, but for now...
       .catch(() => [])
     : undefined,
 ]).then(([
@@ -109,7 +109,7 @@ export const getDataForCategories = () => Promise.all([
   albums,
 }));
 
-export const getCountsForCategories = async () => {
+export const getCountsForCategories = async (includeHidden?: boolean) => {
   const {
     recents,
     years,
@@ -120,7 +120,7 @@ export const getCountsForCategories = async () => {
     recipes,
     films,
     focalLengths,
-  } = await getDataForCategories();
+  } = await getDataForCategories(includeHidden);
 
   return {
     recents: recents[0]?.count

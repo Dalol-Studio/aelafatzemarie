@@ -4,12 +4,14 @@ import { Album } from '.';
 export const getPhotosAlbumDataCached = ({
   album,
   limit,
+  hidden,
 }: {
   album: Album,
   limit?: number,
+  hidden?: 'exclude' | 'include' | 'only',
 }) =>
   Promise.all([
-    getPhotosCached({ album, limit }),
-    getPhotosMetaCached({ album }),
+    getPhotosCached({ album, limit, hidden }),
+    getPhotosMetaCached({ album, hidden }),
   ]);
 

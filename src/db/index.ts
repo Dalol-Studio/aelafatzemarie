@@ -39,8 +39,12 @@ export type PhotoQueryOptions = {
   album?: Album
 };
 
+import { TAG_PRIVATE } from '@/tag';
+
 export const areOptionsSensitive = (options: PhotoQueryOptions) =>
-  options.hidden === 'include' || options.hidden === 'only';
+  options.hidden === 'include' ||
+  options.hidden === 'only' ||
+  options.tag === TAG_PRIVATE;
 
 export const getJoinsFromOptions = (options: PhotoQueryOptions) =>
   options.album

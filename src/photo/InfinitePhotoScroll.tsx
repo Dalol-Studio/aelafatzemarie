@@ -57,7 +57,9 @@ export default function InfinitePhotoScroll({
     revalidatePhoto?: RevalidatePhoto
   }) => ReactNode
 } & PhotoSetCategory) {
-  const { isUserSignedIn } = useAppState();
+  const { isUserSignedIn, userRole } = useAppState();
+
+  const isSensitive = userRole === 'admin' || userRole === 'private-viewer';
   
   const { utility } = useAppText();
 
@@ -78,7 +80,7 @@ export default function InfinitePhotoScroll({
       sortWithPriority,
       excludeFromFeeds,
       limit: itemsPerPage,
-      hidden: includeHiddenPhotos ? 'include' : 'exclude',
+      hidden: (includeHiddenPhotos || isSensitive) ? 'include' : 'exclude',
       camera,
       lens,
       tag,
@@ -94,6 +96,7 @@ export default function InfinitePhotoScroll({
     initialOffset,
     itemsPerPage,
     includeHiddenPhotos,
+    isSensitive,
     camera,
     lens,
     tag,
