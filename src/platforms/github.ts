@@ -156,6 +156,9 @@ export const getGitHubMeta = async (params: RepoParams) => {
       urlCommit,
       isBaseRepo,
       didError: false,
+      isForkedFromBase: undefined,
+      behindBy: undefined,
+      isBehind: undefined,
     };
   }
 

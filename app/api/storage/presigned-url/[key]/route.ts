@@ -27,16 +27,16 @@ export async function GET(
 
     switch (CURRENT_STORAGE) {
       case 'cloudflare-r2':
-        client = cloudflareR2Client();
-        command = cloudflareR2PutObjectCommandForKey(key);
+        client = await cloudflareR2Client();
+        command = await cloudflareR2PutObjectCommandForKey(key);
         break;
       case 'minio':
-        client = minioClient();
-        command = minioPutObjectCommandForKey(key);
+        client = await minioClient();
+        command = await minioPutObjectCommandForKey(key);
         break;
       default:
-        client = awsS3Client();
-        command = awsS3PutObjectCommandForKey(key);
+        client = await awsS3Client();
+        command = await awsS3PutObjectCommandForKey(key);
         break;
     }
     
