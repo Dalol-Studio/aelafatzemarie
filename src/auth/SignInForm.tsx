@@ -109,7 +109,13 @@ export default function SignInForm({
                 type="email"
                 value={email}
                 onChange={setEmail}
-                className="*:text-white/70 *:bg-white/5 *:border-white/10"
+                className={clsx(
+                  '*:!text-white/90 *:!bg-white/5 *:!border-white/10',
+                  '*:backdrop-blur-md',
+                  '[&_input]:!bg-transparent [&_input]:!text-white',
+                  '[&_input]:placeholder:!text-white/50',
+                  '[&_input]:autofill:!bg-white/5 [&_input]:autofill:!text-white',
+                )}
               />
               <FieldsetWithStatus
                 id="password"
@@ -117,7 +123,13 @@ export default function SignInForm({
                 type="password"
                 value={password}
                 onChange={setPassword}
-                className="*:text-white/70 *:bg-white/5 *:border-white/10"
+                className={clsx(
+                  '*:!text-white/90 *:!bg-white/5 *:!border-white/10',
+                  '*:backdrop-blur-md',
+                  '[&_input]:!bg-transparent [&_input]:!text-white',
+                  '[&_input]:placeholder:!text-white/50',
+                  '[&_input]:autofill:!bg-white/5 [&_input]:autofill:!text-white',
+                )}
               />
             </div>
             <SubmitButtonWithStatus

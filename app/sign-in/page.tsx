@@ -20,7 +20,7 @@ export default async function SignInPage() {
   
   return (
     <div className={clsx(
-      'fixed inset-0',
+      'fixed inset-0 z-[100]',
       'flex items-center justify-center flex-col',
       'bg-black',
     )}>

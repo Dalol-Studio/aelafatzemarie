@@ -37,16 +37,15 @@ export default function AppGrid({
       ref={containerRef}
       className={clsx(
         'grid',
-        'grid-cols-1 md:grid-cols-12',
+        'grid-cols-1 md:grid-cols-16',
         'gap-3 md:gap-4',
         'max-w-[1280px] 3xl:w-[1280px]',
-        // Offset sidebar width when centering on large screens
-        '3xl:translate-x-[162px]',
+        'mx-auto',
         className,
       )}
     >
       <div className={clsx(
-        'col-span-1 md:col-span-9',
+        'col-span-1 md:col-span-13',
         sideFirstOnMobile && 'order-2 md:order-none',
         classNameMain,
       )}>
@@ -55,7 +54,7 @@ export default function AppGrid({
       {contentSide &&
         <div className={clsx(
           'col-span-1 md:col-span-3',
-          '3xl:max-w-[260px]',
+          '3xl:max-w-[230px]',
           sideFirstOnMobile && 'order-1 md:order-none',
           sideHiddenOnMobile && 'max-md:hidden',
           classNameSide,
