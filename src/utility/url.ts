@@ -30,16 +30,38 @@ export const downloadFileFromBrowser = async (
   url: string,
   fileName: string,
 ) => {
-  const blob = await fetch(url)
-    .then(response => response.blob());
-  const downloadUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = downloadUrl;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(downloadUrl);
+  try {
+    // Use API proxy to avoid CORS issues with S3/external storage
+    const encodedUrl = encodeURIComponent(url);
+    const encodedName = encodeURIComponent(fileName);
+    const proxyUrl = `/api/download?url=${encodedUrl}&fileName=${encodedName}`;
+    const response = await fetch(proxyUrl);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+    
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (error) {
+    // Fallback: try direct link (may open in new tab for cross-origin)
+    console.warn('Download via proxy failed, trying direct link:', error);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 };
 
 // Necessary for useClientSearchParams to see window.location changes,
