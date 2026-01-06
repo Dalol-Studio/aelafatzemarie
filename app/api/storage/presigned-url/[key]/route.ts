@@ -14,14 +14,31 @@ import {
 import { CURRENT_STORAGE } from '@/app/config';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ key: string }> },
 ) {
-  const { key } = await params;
+  try {
+    const { key } = await params;
 
-  const session = await auth();
-  if (session?.user && key) {
+    const session = await auth();
+    if (!session?.user) {
+      return new Response('Unauthorized request', {
+        status: 401,
+        headers: { 'content-type': 'text/plain' },
+      });
+    }
+
+    if (!key) {
+      return new Response('Missing key parameter', {
+        status: 400,
+        headers: { 'content-type': 'text/plain' },
+      });
+    }
+
     let client;
     let command;
 
@@ -39,14 +56,21 @@ export async function GET(
         command = await awsS3PutObjectCommandForKey(key);
         break;
     }
-    
+
+    // 1 hour expiration for presigned URL
     const url = await getSignedUrl(client, command, { expiresIn: 3600 });
 
-    return new Response(
-      url,
-      { headers: { 'content-type': 'text/plain' } },
-    );
-  } else {
-    return new Response('Unauthorized request', { status: 401 });
+    return new Response(url, {
+      headers: {
+        'content-type': 'text/plain',
+        'cache-control': 'no-store',
+      },
+    });
+  } catch (error: any) {
+    console.error('Error generating presigned URL:', error);
+    return new Response(`Error: ${error.message}`, {
+      status: 500,
+      headers: { 'content-type': 'text/plain' },
+    });
   }
 }

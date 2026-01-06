@@ -506,7 +506,7 @@ export const togglePrivatePhotoAction = async (
   photoId: string,
   redirectPath?: string,
 ) =>
-  runAuthenticatedAdminServerAction(async () => {
+  runAuthenticatedSensitiveServerAction(async () => {
     const photo = await getPhoto(photoId, true);
     if (photo) {
       photo.hidden = !photo.hidden;

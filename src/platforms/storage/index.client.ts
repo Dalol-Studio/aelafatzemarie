@@ -122,16 +122,69 @@ export const uploadFromClientViaPresignedUrl = async (
   fileNameBase: string,
   extension: string,
   addRandomSuffix?: boolean,
+  retries = 3,
 ) => {
   const key = addRandomSuffix
     ? `${fileNameBase}-${generateStorageId()}.${extension}`
     : `${fileNameBase}.${extension}`;
 
-  const url = await fetch(`${PATH_API_PRESIGNED_URL}/${key}`)
-    .then((response) => response.text());
+  let lastError: Error | null = null;
 
-  return fetch(url, { method: 'PUT', body: file })
-    .then(() => `${baseUrlForStorage(CURRENT_STORAGE)}/${key}`);
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      // Get presigned URL with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      const presignedResponse = await fetch(
+        `${PATH_API_PRESIGNED_URL}/${key}`,
+        { signal: controller.signal },
+      );
+      clearTimeout(timeoutId);
+
+      if (!presignedResponse.ok) {
+        throw new Error(
+          `Failed to get presigned URL: ${presignedResponse.status}`,
+        );
+      }
+
+      const url = await presignedResponse.text();
+
+      if (!url || url.startsWith('Unauthorized')) {
+        throw new Error('Unauthorized: Please sign in to upload');
+      }
+
+      // Upload file with timeout
+      const uploadController = new AbortController();
+      const uploadTimeoutId = setTimeout(
+        () => uploadController.abort(),
+        300000,
+      ); // 5 min timeout for large files
+
+      const uploadResponse = await fetch(url, {
+        method: 'PUT',
+        body: file,
+        signal: uploadController.signal,
+      });
+      clearTimeout(uploadTimeoutId);
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.status}`);
+      }
+
+      return `${baseUrlForStorage(CURRENT_STORAGE)}/${key}`;
+    } catch (error: any) {
+      lastError = error;
+      console.error(`Upload attempt ${attempt} failed:`, error.message);
+
+      if (attempt < retries) {
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
+
+  throw lastError || new Error('Upload failed after retries');
 };
 
 export const uploadFileFromClient = async (
