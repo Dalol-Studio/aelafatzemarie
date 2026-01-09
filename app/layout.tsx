@@ -34,6 +34,7 @@ import { PATH_FEED_JSON, PATH_RSS_XML } from '@/app/path';
 import SelectPhotosProvider from '@/admin/select/SelectPhotosProvider';
 import AdminBatchEditPanel from '@/admin/select/AdminBatchEditPanel';
 import Script from 'next/script';
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 
 import '../tailwind.css';
 
@@ -153,6 +154,7 @@ export default function RootLayout({
             </SelectPhotosProvider>
           </AppTextProvider>
         </AppStateProvider>
+        <ServiceWorkerRegistration />
         {PAGE_SCRIPT_URLS.map(url => <Script key={url} src={url} />)}
       </body>
     </html>

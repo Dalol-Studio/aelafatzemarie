@@ -82,11 +82,30 @@ export const formatDate = ({
 export const formatDateFromPostgresString = (
   date: string,
   length?: Length,
-) =>
-  formatDate({
-    date: parse(date, DATE_FORMAT_POSTGRES, new Date()),
-    length,
-  });
+) => {
+  // Handle empty, null, or invalid date strings
+  if (!date || typeof date !== 'string') {
+    return 'Unknown date';
+  }
+  
+  try {
+    const parsedDate = parse(date, DATE_FORMAT_POSTGRES, new Date());
+    
+    // Check if the parsed date is valid
+    if (isNaN(parsedDate.getTime())) {
+      console.warn(`Invalid date string: "${date}"`);
+      return 'Unknown date';
+    }
+    
+    return formatDate({
+      date: parsedDate,
+      length,
+    });
+  } catch (error) {
+    console.warn(`Error parsing date string "${date}":`, error);
+    return 'Unknown date';
+  }
+};
 
 export const formatDateForPostgres = (date: Date) =>
   date.toISOString().replace(

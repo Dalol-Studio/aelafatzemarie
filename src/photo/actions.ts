@@ -844,3 +844,19 @@ export const searchPhotosAction = async (query: string) => {
       return [] as Photo[];
     });
 };
+
+export const getPhotosForDownloadAction = async (photoIds: string[]) =>
+  runAuthenticatedSensitiveServerAction(async () => {
+    const photos: { id: string; url: string; title: string }[] = [];
+    for (const id of photoIds) {
+      const photo = await getPhoto(id, true);
+      if (photo) {
+        photos.push({
+          id: photo.id,
+          url: photo.url,
+          title: photo.title || photo.id,
+        });
+      }
+    }
+    return photos;
+  });

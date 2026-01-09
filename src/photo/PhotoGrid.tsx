@@ -15,6 +15,9 @@ import {
   DATA_KEY_PHOTO_GRID,
   DATA_KEY_PHOTO_ID,
 } from '@/admin/select/SelectPhotosProvider';
+import IconLock from '@/components/icons/IconLock';
+import Tooltip from '@/components/Tooltip';
+import { PRIVATE_DESCRIPTION } from './visibility';
 
 export default function PhotoGrid({
   photos,
@@ -50,7 +53,12 @@ export default function PhotoGrid({
 } & PhotoSetCategory) {
   const {
     isGridHighDensity,
+    userRole,
   } = useAppState();
+
+  // Check if user can see private photos
+  const canSeePrivatePhotos =
+    userRole === 'admin' || userRole === 'private-viewer';
 
   const {
     isSelectingPhotos,
@@ -122,6 +130,20 @@ export default function PhotoGrid({
                   : (selectedPhotoIds ?? []).concat(photo.id),
                 )}
               />}
+            {/* Private photo indicator */}
+            {canSeePrivatePhotos && photo.hidden &&
+              <div className={clsx(
+                'absolute top-1.5 left-1.5 z-10',
+                'bg-black/60 rounded-full p-1',
+                'pointer-events-auto',
+              )}>
+                <Tooltip content={PRIVATE_DESCRIPTION} supportMobile>
+                  <IconLock
+                    size={12}
+                    className="text-white"
+                  />
+                </Tooltip>
+              </div>}
           </div>;
         }).concat(additionalTile ? <>{additionalTile}</> : [])}
         itemKeys={photos.map(photo => photo.id)

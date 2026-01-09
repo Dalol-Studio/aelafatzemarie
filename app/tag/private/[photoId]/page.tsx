@@ -13,6 +13,7 @@ import { TAG_PRIVATE } from '@/tag';
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
+import { auth } from '@/auth/server';
 
 const getPhotosNearIdCachedCached = cache((photoId: string) =>
   getPhotosNearIdCached(
@@ -28,6 +29,13 @@ export async function generateMetadata({
   params,
 }: PhotoTagProps): Promise<Metadata> {
   const { photoId } = await params;
+
+  // Check authentication for metadata generation
+  const session = await auth();
+  const role = (session?.user as any)?.role;
+  const canAccessPrivate = role === 'admin' || role === 'private-viewer';
+  
+  if (!canAccessPrivate) { return {}; }
 
   const { photo } = await getPhotosNearIdCachedCached(photoId);
 
@@ -59,6 +67,13 @@ export default async function PhotoTagPrivatePage({
 }: PhotoTagProps) {
   const { photoId } = await params;
 
+  // Check authentication - only admin and private-viewer can access
+  const session = await auth();
+  const role = (session?.user as any)?.role;
+  const canAccessPrivate = role === 'admin' || role === 'private-viewer';
+  
+  if (!canAccessPrivate) { redirect(PATH_ROOT); }
+
   const { photo, photos, photosGrid, indexNumber } =
     await getPhotosNearIdCachedCached(photoId);
 
@@ -80,3 +95,4 @@ export default async function PhotoTagPrivatePage({
     }} />
   );
 }
+

@@ -12,11 +12,13 @@ import {
   tagMultiplePhotosAction,
   updateTakenAtMultiplePhotosAction,
   generateTitlesForPhotosAction,
+  getPhotosForDownloadAction,
 } from '@/photo/actions';
 import { toastSuccess } from '@/toast';
 import DeletePhotosButton from '@/admin/DeletePhotosButton';
 import { photoQuantityText } from '@/photo';
 import { FaArrowDown, FaCheck, FaCalendar } from 'react-icons/fa6';
+import { MdOutlineFileDownload } from 'react-icons/md';
 import ResponsiveText from '@/components/primitives/ResponsiveText';
 import IconFavs from '@/components/icons/IconFavs';
 import IconTag from '@/components/icons/IconTag';
@@ -28,6 +30,7 @@ import IconAlbum from '@/components/icons/IconAlbum';
 import { addPhotosToAlbumsAction } from '@/album/actions';
 import FieldsetDate from '@/components/FieldsetDate';
 import { HiSparkles } from 'react-icons/hi';
+import { downloadFileFromBrowser } from '@/utility/url';
 
 export default function AdminBatchEditPanelClient({
   uniqueAlbums,

@@ -51,6 +51,7 @@ import { lensFromPhoto } from '@/lens';
 import MaskedScroll from '@/components/MaskedScroll';
 import { useAppText } from '@/i18n/state/client';
 import { Album } from '@/album';
+import PhotoVisibilityIcon from './visibility/PhotoVisibilityIcon';
 
 export default function PhotoLarge({
   photo,
@@ -190,11 +191,14 @@ export default function PhotoLarge({
     hasMetaContent;
 
   const renderPhotoLink =
-    <PhotoLink
-      photo={photo}
-      className="font-bold uppercase grow"
-      prefetch={prefetch}
-    />;
+    <div className="flex items-center gap-1.5">
+      <PhotoLink
+        photo={photo}
+        className="font-bold uppercase grow"
+        prefetch={prefetch}
+      />
+      <PhotoVisibilityIcon photo={photo} />
+    </div>;
 
   // Restrict width for landscape photos
   // (portrait photos are always height restricted)

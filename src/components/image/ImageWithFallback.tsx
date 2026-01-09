@@ -30,7 +30,10 @@ export default function ImageWithFallback({
     useState(!hasLoadedWithAnimations);
 
   const onLoad = useCallback(() => setIsLoading(false), []);
-  const onError = useCallback(() => setDidError(true), []);
+  const onError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    setDidError(true);
+    console.error('Image failed to load:', e.currentTarget.src);
+  }, []);
 
   useEffect(() => {
     if (
