@@ -49,6 +49,7 @@ import PhotoRecipe from '@/recipe/PhotoRecipe';
 import PhotoLens from '@/lens/PhotoLens';
 import { lensFromPhoto } from '@/lens';
 import MaskedScroll from '@/components/MaskedScroll';
+import IconLock from '@/components/icons/IconLock';
 import { useAppText } from '@/i18n/state/client';
 import { Album } from '@/album';
 
@@ -127,6 +128,7 @@ export default function PhotoLarge({
     arePhotosMatted,
     shouldDebugRecipeOverlays,
     isUserSignedIn,
+    userRole,
   } = useAppState();
 
   const appText = useAppText();
@@ -230,6 +232,16 @@ export default function PhotoLarge({
           priority={priority}
         />
       </ZoomControls>
+      {photo.hidden &&
+       (userRole === 'admin' || userRole === 'private-viewer') &&
+        <div className={clsx(
+          'absolute top-3 left-3 z-10',
+          'text-white/90 drop-shadow-md',
+        )}>
+          <Tooltip content="Private photo">
+            <IconLock size={20} />
+          </Tooltip>
+        </div>}
       <div className={clsx(
         'absolute inset-0',
         'flex items-center justify-center',

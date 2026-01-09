@@ -15,6 +15,8 @@ import {
   DATA_KEY_PHOTO_GRID,
   DATA_KEY_PHOTO_ID,
 } from '@/admin/select/SelectPhotosProvider';
+import IconLock from '@/components/icons/IconLock';
+import Tooltip from '@/components/Tooltip';
 
 export default function PhotoGrid({
   photos,
@@ -50,7 +52,11 @@ export default function PhotoGrid({
 } & PhotoSetCategory) {
   const {
     isGridHighDensity,
+    userRole,
   } = useAppState();
+
+  const canSeePrivatePhotos = userRole === 'admin' ||
+    userRole === 'private-viewer';
 
   const {
     isSelectingPhotos,
@@ -114,6 +120,15 @@ export default function PhotoGrid({
                   : undefined,
               }}
             />
+            {photo.hidden && canSeePrivatePhotos &&
+              <div className={clsx(
+                'absolute top-2 left-2 z-10',
+                'text-white/90 drop-shadow-md',
+              )}>
+                <Tooltip content="Private photo">
+                  <IconLock size={16} />
+                </Tooltip>
+              </div>}
             {isSelectingPhotos &&
               <SelectTileOverlay
                 isSelected={isSelected}
