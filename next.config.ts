@@ -73,7 +73,6 @@ const nextConfig: NextConfig = {
     qualities: [75, IMAGE_QUALITY],
     remotePatterns,
     minimumCacheTTL: 31536000,
-    unoptimized: true,
   },
   turbopack: {
     resolveAlias: {

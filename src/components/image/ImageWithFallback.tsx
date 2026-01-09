@@ -30,10 +30,7 @@ export default function ImageWithFallback({
     useState(!hasLoadedWithAnimations);
 
   const onLoad = useCallback(() => setIsLoading(false), []);
-  const onError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    setDidError(true);
-    console.error('Image failed to load:', e.currentTarget.src);
-  }, []);
+  const onError = useCallback(() => setDidError(true), []);
 
   useEffect(() => {
     if (
@@ -76,19 +73,13 @@ export default function ImageWithFallback({
           'overflow-hidden',
           fadeFallbackTransition &&
             'transition-opacity duration-300 ease-in',
-          !(BLUR_ENABLED && blurDataURL) && 'bg-gray-100/10', // Lighter background for better contrast
+          !(BLUR_ENABLED && blurDataURL) && 'bg-main',
           (isLoading || didError || shouldDebugImageFallbacks)
             ? 'opacity-100'
             : 'opacity-0',
-          'flex items-center justify-center', // Center content
         )}
       >
-        {didError ? (
-            <div className="flex flex-col items-center justify-center text-dim gap-2 p-2 text-center">
-                <span className="text-2xl">⚠️</span>
-                <span className="text-xs font-mono">Failed to load</span>
-            </div>
-        ) : (BLUR_ENABLED && blurDataURL)
+        {(BLUR_ENABLED && blurDataURL)
           ? <img {...{
             ...props,
             src: blurDataURL,
@@ -99,7 +90,7 @@ export default function ImageWithFallback({
           }} />
           :  <div className={clsx(
             'w-full h-full',
-            'bg-gray-100/10',
+            'bg-gray-100/50 dark:bg-gray-900/50',
           )} />}
       </div>
     </div>
