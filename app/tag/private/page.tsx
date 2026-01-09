@@ -1,3 +1,4 @@
+
 import AnimateItems from '@/components/AnimateItems';
 import Note from '@/components/Note';
 import AppGrid from '@/components/AppGrid';
@@ -14,46 +15,67 @@ const getPhotosHiddenMetaCached = cache(() =>
   getPhotosMetaCached({ hidden: 'only' }));
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { count, dateRange } = await getPhotosHiddenMetaCached();
+  try {
+    const { count, dateRange } = await getPhotosHiddenMetaCached();
 
-  if (count === 0) { return {}; }
+    if (count === 0) { return {}; }
 
-  const appText = await getAppText();
-  
-  const title = titleForTag(TAG_PRIVATE, undefined, appText, count);
+    const appText = await getAppText();
+    
+    const title = titleForTag(TAG_PRIVATE, undefined, appText, count);
 
-  const description = descriptionForTaggedPhotos(
-    undefined,
-    appText,
-    undefined,
-    count,
-    dateRange,
-  );
-  const url = absolutePathForTag(TAG_PRIVATE);
+    const description = descriptionForTaggedPhotos(
+      undefined,
+      appText,
+      undefined,
+      count,
+      dateRange,
+    );
+    const url = absolutePathForTag(TAG_PRIVATE);
 
-  return {
-    title,
-    openGraph: {
+    return {
       title,
+      openGraph: {
+        title,
+        description,
+        url,
+      },
+      twitter: {
+        description,
+        card: 'summary_large_image',
+      },
       description,
-      url,
-    },
-    twitter: {
-      description,
-      card: 'summary_large_image',
-    },
-    description,
-  };
+    };
+  } catch (e) {
+    console.error('Error generating metadata for private tag:', e);
+    return {
+      title: 'Private',
+    };
+  }
 }
 
 export default async function PrivateTagPage() {
-  const [
-    photos,
-    { count, dateRange },
-  ] = await Promise.all([
-    getPhotosNoStore({ hidden: 'only' }),
-    getPhotosHiddenMetaCached(),
-  ]);
+
+
+  let photos;
+  let count;
+  let dateRange;
+
+  try {
+    const [
+      photosResult,
+      metaResult,
+    ] = await Promise.all([
+      getPhotosNoStore({ hidden: 'only' }),
+      getPhotosHiddenMetaCached(),
+    ]);
+    photos = photosResult;
+    count = metaResult.count;
+    dateRange = metaResult.dateRange;
+  } catch (e: any) {
+    console.error('Error fetching private photos details:', e);
+    return <div>Error loading private photos: {e.message}</div>;
+  }
 
   return (
     <AppGrid

@@ -72,21 +72,38 @@ export const formatDate = ({
       break;
   }
 
-  return showPlaceholder
-    ? placeholderString
-    : timezone
-      ? formatInTimeZone(date, timezone, formatString)
-      : format(date, formatString);
+  try {
+    return showPlaceholder
+      ? placeholderString
+      : timezone
+        ? formatInTimeZone(date, timezone, formatString)
+        : format(date, formatString);
+  } catch (e) {
+    return placeholderString;
+  }
 };
 
 export const formatDateFromPostgresString = (
   date: string,
   length?: Length,
-) =>
-  formatDate({
-    date: parse(date, DATE_FORMAT_POSTGRES, new Date()),
-    length,
-  });
+) => {
+  try {
+    return formatDate({
+      date: parse(date, DATE_FORMAT_POSTGRES, new Date()),
+      length,
+    });
+  } catch (e) {
+    try {
+      // Fallback: try parsing as a standard date object (e.g., ISO, YYYY-MM-DD)
+      return formatDate({
+        date: new Date(date),
+        length,
+      });
+    } catch (e2) {
+      return date;
+    }
+  }
+};
 
 export const formatDateForPostgres = (date: Date) =>
   date.toISOString().replace(
